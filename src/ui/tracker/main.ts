@@ -17,15 +17,21 @@ import {
 
 type SortKey = 'updated' | 'created' | 'company' | 'stage';
 
-/** Colours the stage dot. Warm as an application progresses, muted once closed. */
+/**
+ * Colours the stage dot: cool and neutral while nothing has happened, warming
+ * as an application progresses, muted once it is closed.
+ *
+ * Each is chosen to stay distinct from the indigo accent, since a selected
+ * filter chip paints the accent behind its own dot.
+ */
 const STAGE_COLOURS: Record<Stage, string> = {
-  draft: '#9aa4b1',
-  applied: '#2f5bd8',
-  screening: '#7c3aed',
-  interview: '#b45309',
-  offer: '#1a7f4b',
-  rejected: '#b3261e',
-  withdrawn: '#6b7280',
+  draft: '#94a3b8',
+  applied: '#2563eb',
+  screening: '#0891b2',
+  interview: '#d97706',
+  offer: '#16a34a',
+  rejected: '#dc2626',
+  withdrawn: '#64748b',
 };
 
 const NOTES_DEBOUNCE_MS = 500;

@@ -110,10 +110,12 @@ function outlineFields(input: OverlayInput): () => void {
 
 function outlineColour(report: FieldReport): string | null {
   // AI answers get their own colour so the user can tell at a glance which
-  // values were generated rather than read out of their profile.
-  if (SUCCESS.includes(report.status)) return report.source === 'ai' ? '#6d28d9' : '#1a7f4b';
-  if (report.status === 'failed' || report.status === 'ambiguous') return '#c2410c';
-  if (report.required) return '#b45309';
+  // values were generated rather than read out of their profile. These are the
+  // one place the extension draws on someone else's page, so they are picked to
+  // stay legible against both light and dark form backgrounds.
+  if (SUCCESS.includes(report.status)) return report.source === 'ai' ? '#7c3aed' : '#16a34a';
+  if (report.status === 'failed' || report.status === 'ambiguous') return '#ea580c';
+  if (report.required) return '#d97706';
   return null;
 }
 
@@ -279,6 +281,11 @@ function rankAttention(reports: readonly FieldReport[]): FieldReport[] {
 
 // ── styles ──────────────────────────────────────────────────────────────────
 
+/**
+ * The overlay lives in a shadow root, so it cannot inherit the extension pages'
+ * CSS variables — it carries its own copy of the palette. Kept deliberately in
+ * step with ui/shared.css; if the accent changes there, change it here too.
+ */
 function styleElement(): HTMLStyleElement {
   const style = document.createElement('style');
   style.textContent = `
@@ -286,26 +293,36 @@ function styleElement(): HTMLStyleElement {
     * { box-sizing: border-box; }
 
     .panel {
+      --surface: #ffffff;
+      --ink: #14161d;
+      --ink-muted: #5b6373;
+      --line: rgb(18 22 32 / 10%);
+      --hover: rgb(18 22 32 / 5%);
+
       position: fixed;
       right: 16px;
       bottom: 16px;
-      width: 340px;
+      width: 344px;
       max-height: min(70vh, 560px);
       overflow-y: auto;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid rgb(0 0 0 / 12%);
-      background: #ffffff;
-      color: #14181f;
-      box-shadow: 0 8px 28px rgb(20 24 31 / 22%);
-      font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: 15px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 2px 4px rgb(18 22 32 / 8%), 0 16px 40px -8px rgb(18 22 32 / 26%);
+      font: 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
     @media (prefers-color-scheme: dark) {
       .panel {
-        background: #21262e;
-        color: #e8ebef;
-        border-color: rgb(255 255 255 / 14%);
+        --surface: #1c2029;
+        --ink: #e9ebf0;
+        --ink-muted: #98a1b2;
+        --line: rgb(255 255 255 / 12%);
+        --hover: rgb(255 255 255 / 7%);
+        box-shadow: 0 2px 4px rgb(0 0 0 / 50%), 0 16px 40px -8px rgb(0 0 0 / 60%);
       }
     }
 
@@ -316,104 +333,109 @@ function styleElement(): HTMLStyleElement {
       align-items: center;
     }
 
-    .title { font-weight: 700; letter-spacing: -0.01em; }
+    .title { font-weight: 680; letter-spacing: -0.015em; font-size: 14px; }
 
     .close {
       justify-self: end;
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border: none;
-      border-radius: 6px;
+      border-radius: 7px;
       background: transparent;
-      color: inherit;
+      color: var(--ink-muted);
       font-size: 18px;
       line-height: 1;
       cursor: pointer;
-      opacity: 0.6;
+      transition: background 120ms ease, color 120ms ease;
     }
-    .close:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
+    .close:hover { color: var(--ink); background: var(--hover); }
 
     .counts {
       grid-column: 1 / -1;
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
     .chip {
-      padding: 2px 8px;
+      padding: 3px 9px;
       border-radius: 999px;
       font-size: 11px;
-      font-weight: 650;
+      font-weight: 640;
+      letter-spacing: 0.01em;
     }
-    .chip.ok { background: #e7f5ed; color: #1a7f4b; }
-    .chip.warn { background: #fdf3e0; color: #9a6400; }
-    .chip.muted { background: rgb(127 127 127 / 18%); color: inherit; opacity: 0.85; }
-    .chip.ai { background: #ede9fe; color: #5b21b6; }
+    .chip.ok { background: #e6f5ec; color: #16794a; }
+    .chip.warn { background: #fdf2df; color: #8a5a00; }
+    .chip.muted { background: var(--hover); color: var(--ink-muted); }
+    .chip.ai { background: #efe9fd; color: #6321c7; }
 
     .assist {
       display: block;
       width: 100%;
-      margin-top: 12px;
-      padding: 8px;
-      border: 1px solid #6d28d9;
-      border-radius: 7px;
+      margin-top: 13px;
+      padding: 9px;
+      border: 1px solid #7c3aed;
+      border-radius: 8px;
       background: transparent;
-      color: #6d28d9;
+      color: #6321c7;
       font: inherit;
-      font-weight: 650;
+      font-weight: 640;
       cursor: pointer;
+      transition: background 120ms ease;
     }
-    .assist:hover:not(:disabled) { background: #ede9fe; }
-    .assist:disabled { opacity: 0.6; cursor: default; }
+    .assist:hover:not(:disabled) { background: #efe9fd; }
+    .assist:disabled { opacity: 0.55; cursor: default; }
 
     @media (prefers-color-scheme: dark) {
-      .chip.ai { background: #2e1065; color: #ddd6fe; }
-      .assist { border-color: #a78bfa; color: #c4b5fd; }
-      .assist:hover:not(:disabled) { background: rgb(167 139 250 / 16%); }
+      .chip.ok { background: #102b1e; color: #4ecf94; }
+      .chip.warn { background: #2e2311; color: #e0ad63; }
+      .chip.ai { background: #241243; color: #cbb6fb; }
+      .assist { border-color: #8b5cf6; color: #cbb6fb; }
+      .assist:hover:not(:disabled) { background: rgb(139 92 246 / 16%); }
     }
 
     .assist-error { margin: 10px 0 0; color: #c2410c; font-size: 12px; }
 
     h2 {
-      margin: 14px 0 6px;
-      font-size: 11px;
+      margin: 15px 0 7px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      opacity: 0.6;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
     }
 
-    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
 
     .item {
       display: block;
       width: 100%;
-      padding: 7px 9px;
-      border: 1px solid rgb(127 127 127 / 26%);
-      border-radius: 7px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
       background: transparent;
       color: inherit;
       font: inherit;
       text-align: left;
       cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease;
     }
-    .item:hover { border-color: currentColor; }
-    .item.required { border-left: 3px solid #b45309; }
+    .item:hover { background: var(--hover); border-color: var(--ink-muted); }
+    .item.required { border-left: 3px solid #d97706; }
 
     .item-label { display: block; font-weight: 600; }
-    .item-reason { display: block; margin-top: 1px; font-size: 12px; opacity: 0.7; }
+    .item-reason { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-muted); }
 
-    .all-clear { margin: 12px 0 0; }
-    .more { margin: 6px 0 0; font-size: 12px; opacity: 0.7; }
+    .all-clear { margin: 13px 0 0; color: var(--ink-muted); }
+    .more { margin: 7px 0 0; font-size: 12px; color: var(--ink-muted); }
 
     .footer {
-      margin: 12px 0 0;
-      padding-top: 10px;
-      border-top: 1px solid rgb(127 127 127 / 22%);
+      margin: 13px 0 0;
+      padding-top: 11px;
+      border-top: 1px solid var(--line);
       font-size: 12px;
-      opacity: 0.75;
+      color: var(--ink-muted);
     }
   `;
   return style;

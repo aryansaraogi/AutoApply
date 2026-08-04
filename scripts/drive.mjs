@@ -310,20 +310,26 @@ async function main() {
 
     // 2b. Reload the options page so it renders the seeded résumé, and capture
     //     it — a broken résumé manager is a layout problem no test would see.
-    await sw.send('Page.enable').catch(() => {});
-    await sw.evaluate('location.reload()');
-    await waitFor(
-      () => sw.evaluate(`document.querySelectorAll('#resume-list .resume-item').length`),
-      'the résumé list to render',
-    );
-    // The résumé manager sits below the profile groups; frame it deliberately
-    // rather than screenshotting whatever happens to be at the top.
-    await sw.evaluate(
-      `document.getElementById('resume-section').scrollIntoView({ block: 'start' })`,
-    );
-    const optionsShot = await sw.send('Page.captureScreenshot', { format: 'png' });
-    await writeFile(join(root, 'drive-options.png'), Buffer.from(optionsShot.data, 'base64'));
-    console.log(`✓ options screenshot → ${join(root, 'drive-options.png')}`);
+    //
+    //     Automated runs only: keep-open seeds no résumé, so there would be no
+    //     list item to wait for, and the user is about to look at the real page
+    //     anyway.
+    if (!KEEP_OPEN) {
+      await sw.send('Page.enable').catch(() => {});
+      await sw.evaluate('location.reload()');
+      await waitFor(
+        () => sw.evaluate(`document.querySelectorAll('#resume-list .resume-item').length`),
+        'the résumé list to render',
+      );
+      // The résumé manager sits below the profile groups; frame it deliberately
+      // rather than screenshotting whatever happens to be at the top.
+      await sw.evaluate(
+        `document.getElementById('resume-section').scrollIntoView({ block: 'start' })`,
+      );
+      const optionsShot = await sw.send('Page.captureScreenshot', { format: 'png' });
+      await writeFile(join(root, 'drive-options.png'), Buffer.from(optionsShot.data, 'base64'));
+      console.log(`✓ options screenshot → ${join(root, 'drive-options.png')}`);
+    }
 
     if (KEEP_OPEN) {
       await handOver(sw, extensionId);

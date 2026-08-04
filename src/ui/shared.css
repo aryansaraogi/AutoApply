@@ -1,42 +1,78 @@
-/* Shared chrome for the options page and the sidepanel.
-   Both light and dark are styled — extension pages follow the browser theme. */
+/* Shared chrome for the options page, the side panel, and the tracker.
+   Both light and dark are styled — extension pages follow the browser theme.
+
+   The accent is indigo rather than blue on purpose: the tracker's stage colours
+   already use blue for "Applied", and a selected stage chip draws the accent as
+   its background. With a blue accent, a selected Applied chip was blue-on-blue. */
 
 :root {
-  --bg: #ffffff;
-  --bg-sunken: #f6f7f9;
+  color-scheme: light dark;
+
+  /* Surfaces, sunken → raised. */
+  --bg: #fcfcfd;
+  --bg-sunken: #f2f3f7;
   --bg-raised: #ffffff;
-  --border: #dfe3e8;
-  --border-strong: #c4cad2;
-  --text: #14181f;
-  --text-muted: #5c6672;
-  --accent: #2f5bd8;
+  --bg-hover: #eef0f5;
+
+  --border: #e5e7ee;
+  --border-strong: #cfd3de;
+
+  --text: #14161d;
+  --text-muted: #5b6373;
+  --text-subtle: #858c9c;
+
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef0fe;
   --accent-contrast: #ffffff;
-  --ok: #1a7f4b;
-  --ok-bg: #e7f5ed;
-  --warn: #9a6400;
-  --warn-bg: #fdf3e0;
-  --danger: #b3261e;
-  --radius: 8px;
-  --shadow: 0 1px 2px rgb(20 24 31 / 8%), 0 4px 12px rgb(20 24 31 / 6%);
+
+  --ok: #16794a;
+  --ok-bg: #e6f5ec;
+  --warn: #8a5a00;
+  --warn-bg: #fdf2df;
+  --danger: #b02a20;
+  --danger-bg: #fdeceb;
+
+  --radius-sm: 6px;
+  --radius: 9px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 2px rgb(18 22 32 / 6%);
+  --shadow: 0 1px 2px rgb(18 22 32 / 6%), 0 6px 16px -4px rgb(18 22 32 / 10%);
+  --shadow-lg: 0 2px 4px rgb(18 22 32 / 8%), 0 12px 32px -8px rgb(18 22 32 / 16%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #16191e;
-    --bg-sunken: #1c2027;
-    --bg-raised: #21262e;
-    --border: #333a44;
-    --border-strong: #46505d;
-    --text: #e8ebef;
-    --text-muted: #9aa4b1;
-    --accent: #7d9dff;
-    --accent-contrast: #10131a;
-    --ok: #5ed39a;
-    --ok-bg: #16301f;
-    --warn: #e5b567;
-    --warn-bg: #322611;
-    --danger: #f2857c;
-    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
+    /* A real elevation ramp rather than three near-identical greys, so cards
+       read as raised without needing heavy borders. */
+    --bg: #0f1116;
+    --bg-sunken: #151820;
+    --bg-raised: #1c2029;
+    --bg-hover: #242935;
+
+    --border: #2a2f3b;
+    --border-strong: #3d4453;
+
+    --text: #e9ebf0;
+    --text-muted: #98a1b2;
+    --text-subtle: #6f7889;
+
+    --accent: #8b87f5;
+    --accent-hover: #a5a1f8;
+    --accent-soft: #211f3d;
+    --accent-contrast: #0f1116;
+
+    --ok: #4ecf94;
+    --ok-bg: #102b1e;
+    --warn: #e0ad63;
+    --warn-bg: #2e2311;
+    --danger: #f08a80;
+    --danger-bg: #331715;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 45%);
+    --shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 6px 16px -4px rgb(0 0 0 / 45%);
+    --shadow-lg: 0 2px 4px rgb(0 0 0 / 50%), 0 12px 32px -8px rgb(0 0 0 / 55%);
   }
 }
 
@@ -48,20 +84,27 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font:
+    14px/1.55 ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1 {
   margin: 0;
   font-size: 20px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-weight: 640;
+  letter-spacing: -0.015em;
 }
 
 h2 {
   margin: 0;
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 640;
+  letter-spacing: -0.005em;
 }
 
 p {
@@ -70,6 +113,7 @@ p {
 
 a {
   color: var(--accent);
+  text-underline-offset: 2px;
 }
 
 .muted {
@@ -87,58 +131,95 @@ label {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="url"],
-input[type="date"],
-input[type="password"],
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='url'],
+input[type='date'],
+input[type='password'],
 select,
 textarea {
   width: 100%;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-raised);
   color: var(--text);
   font: inherit;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--text-subtle);
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-button:focus-visible {
+button:focus-visible,
+a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* A focused field gets a soft ring as well as the outline, so the active row is
+   obvious on a page with forty of them. */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
 }
 
 textarea {
   min-height: 120px;
   resize: vertical;
   font-family: inherit;
+  line-height: 1.5;
 }
 
 button {
-  padding: 7px 12px;
+  padding: 8px 13px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-raised);
   color: var(--text);
   font: inherit;
-  font-weight: 550;
+  font-weight: 560;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 button:hover:not(:disabled) {
-  border-color: var(--accent);
+  background: var(--bg-hover);
+  border-color: var(--text-subtle);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0.5px);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
+  box-shadow: none;
 }
 
 button.primary {
@@ -147,8 +228,18 @@ button.primary {
   color: var(--accent-contrast);
 }
 
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
 button.danger {
   color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border-strong));
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
   border-color: var(--danger);
 }
 
@@ -164,17 +255,19 @@ button.danger {
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 15px 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .pill {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 9px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 640;
+  letter-spacing: 0.02em;
+  background: var(--bg-sunken);
+  color: var(--text-muted);
 }
 
 .pill.ok {
