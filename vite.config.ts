@@ -11,7 +11,7 @@ const dir = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  * `root: 'src'` keeps the HTML entries from landing in dist/src/... — with it,
  * src/options.html emits as dist/options.html, which is what manifest.json expects.
  */
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: dir('./src'),
   publicDir: dir('./public'),
   // Extension pages load from chrome-extension://<id>/, so relative asset URLs
@@ -24,7 +24,9 @@ export default defineConfig({
     outDir: dir('./dist'),
     emptyOutDir: true,
     target: 'chrome116',
-    sourcemap: true,
+    // Sourcemaps are 80% of the bundle and publish the full source, so the store
+    // build drops them. `vite build --mode release` selects that.
+    sourcemap: mode !== 'release',
     rollupOptions: {
       input: {
         'service-worker': dir('./src/background/service-worker.ts'),
@@ -39,4 +41,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

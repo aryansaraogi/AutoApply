@@ -1,10 +1,17 @@
 {
   "manifest_version": 3,
   "name": "AutoApply",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Fills job applications from a profile stored on your machine. Highlights what it filled and what it skipped — you always submit yourself.",
 
-  "permissions": ["storage", "unlimitedStorage", "activeTab", "scripting", "sidePanel"],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "permissions": ["storage", "activeTab", "scripting", "sidePanel"],
 
   "host_permissions": [
     "https://*.greenhouse.io/*",
@@ -23,7 +30,13 @@
   },
 
   "action": {
-    "default_title": "AutoApply"
+    "default_title": "AutoApply",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
 
   "side_panel": {

@@ -26,7 +26,7 @@
 
         <section class="card" id="resume-section">
           <h2>Résumés</h2>
-          <p class="muted small ai-blurb">
+          <p class="muted small section-blurb">
             Stored on this computer and attached automatically to résumé uploads on
             application forms. Cover-letter and other uploads are always left to you.
             PDF, DOCX, DOC, RTF and TXT are accepted.
@@ -47,34 +47,6 @@
           <p id="resume-empty" class="muted small">
             No résumé saved. Résumé uploads will be left for you to attach by hand.
           </p>
-        </section>
-
-        <section class="card" id="ai-section">
-          <h2>AI assist <span class="pill warn">Optional</span></h2>
-          <p class="muted small ai-blurb">
-            Off by default. When enabled, fields the rules could not match are sent
-            to your own API key, on demand only — never automatically. Your key stays
-            in local storage and is used from the extension's background worker.
-          </p>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="ai-enabled">Enable AI assist</label>
-              <select id="ai-enabled">
-                <option value="off">Off</option>
-                <option value="on">On</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="ai-model">Model</label>
-              <input id="ai-model" type="text" spellcheck="false" />
-            </div>
-            <div class="field field-wide">
-              <label for="ai-key">Anthropic API key</label>
-              <input id="ai-key" type="password" spellcheck="false" placeholder="sk-ant-…" />
-              <p class="muted small field-help" id="ai-key-state"></p>
-            </div>
-          </div>
         </section>
 
         <section class="card" id="behaviour-section">

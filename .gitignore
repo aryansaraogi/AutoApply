@@ -5,7 +5,13 @@ dist/
 
 # Chrome for Testing, downloaded on demand by `npm run drive`.
 chrome/
+
+# Debug captures from `npm run drive`. The store/ images are committed, since
+# they are the published listing assets.
 drive-*.png
+
+# Built upload packages — regenerate with `npm run package`.
+releases/
 
 # Pages captured from real ATS sites for offline iteration. They are large and
 # can contain personal data if saved mid-application, so they stay local.

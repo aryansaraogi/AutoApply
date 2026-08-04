@@ -1,11 +1,14 @@
 {
   "name": "autoapply",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Chrome extension that fills job applications from a local profile. Reviews before you submit; never submits for you.",
   "type": "module",
   "scripts": {
     "build": "npm run typecheck && npm run build:pages && npm run build:content && npm run check:manifest",
+    "build:release": "npm run typecheck && vite build --mode release && vite build --config vite.content.config.ts --mode release && npm run check:manifest",
+    "package": "npm run build:release && node scripts/package.mjs",
+    "icons": "node scripts/make-icons.mjs",
     "check:manifest": "node scripts/check-manifest.mjs",
     "build:pages": "vite build",
     "build:content": "vite build --config vite.content.config.ts",
@@ -17,6 +20,7 @@
     "fixtures": "serve fixtures -l 4321",
     "drive": "node scripts/drive.mjs",
     "play": "node scripts/drive.mjs --keep-open",
+    "screenshots": "node scripts/drive.mjs --store",
     "drive:setup": "npx @puppeteer/browsers install chrome@stable"
   },
   "devDependencies": {
@@ -28,8 +32,5 @@
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
     "vitest": "^2.1.8"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.115.0"
   }
 }

@@ -10,6 +10,8 @@
  * Usage:
  *   node scripts/drive.mjs              automated: fill, assert, screenshot, quit
  *   node scripts/drive.mjs --keep-open  set up and hand the browser to a human
+ *   node scripts/drive.mjs --store      same drive, captured at 1280×800 for the
+ *                                       Chrome Web Store listing
  *
  * --keep-open does the tedious part (profile, résumé, site permission, content
  * script injected) and then leaves Chrome running so you can click Fill yourself
@@ -17,9 +19,9 @@
  * you see is your own click.
  */
 
-import { existsSync, readdirSync } from 'node:fs';
-import { writeFile, mkdtemp, readFile } from 'node:fs/promises';
-import { join, dirname, resolve } from 'node:path';
+import { existsSync, readdirSync, mkdirSync } from 'node:fs';
+import { writeFile, mkdtemp } from 'node:fs/promises';
+import { join, dirname, resolve, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +33,24 @@ const FIXTURE = 'http://localhost:4321/sample-application.html';
 
 /** Hand the browser over instead of driving and quitting. */
 const KEEP_OPEN = process.argv.includes('--keep-open');
+
+/**
+ * Capture listing screenshots instead of debug ones. The store requires exactly
+ * 1280×800 (or 640×400), so the window is sized to match and the images land in
+ * store/ under the names STORE-LISTING.md refers to.
+ */
+const STORE = process.argv.includes('--store');
+const SHOT_WIDTH = STORE ? 1280 : 1024;
+const SHOT_HEIGHT = STORE ? 800 : 700;
+
+/**
+ * Where a screenshot goes, given its debug name and its listing name.
+ * @param {string} debugName
+ * @param {string} storeName
+ */
+function shotPath(debugName, storeName) {
+  return STORE ? join(root, 'store', storeName) : join(root, debugName);
+}
 
 /**
  * Chrome for Testing, not the installed browser.
@@ -94,7 +114,7 @@ const RESUME_BYTES = Buffer.from(
 const RESUME_BASE64 = RESUME_BYTES.toString('base64');
 const RESUME_META = {
   id: 'drive-resume',
-  label: 'Drive test résumé',
+  label: 'General résumé',
   filename: 'ada-lovelace.pdf',
   mimeType: 'application/pdf',
   sizeBytes: RESUME_BYTES.length,
@@ -173,6 +193,40 @@ class Cdp {
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 /**
+ * Screenshots a page at exactly the target size.
+ *
+ * The store rejects anything that is not 1280×800 or 640×400, and a browser
+ * window is never exactly its viewport — so the size is forced through CDP
+ * rather than hoped for from --window-size.
+ * @param {Cdp} cdp
+ */
+async function capture(cdp) {
+  // Chrome returns an empty frame for a backgrounded renderer, so a tab that is
+  // not on screen screenshots as plain white at the correct dimensions — which
+  // looks like a working capture until you open the file. Focus it first.
+  await cdp.send('Page.enable').catch(() => {});
+  await cdp.send('Page.bringToFront');
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: SHOT_WIDTH,
+    height: SHOT_HEIGHT,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await sleep(400);
+
+  // No clip and no captureBeyondViewport: the metrics override above already
+  // makes the viewport exactly SHOT_WIDTH×SHOT_HEIGHT, and both of those options
+  // break this shot. A clip without captureBeyondViewport returns white for
+  // anything outside the real viewport; captureBeyondViewport re-renders the
+  // page outside its viewport, which drops position:fixed elements — and the
+  // review overlay, the one thing worth showing, is position:fixed.
+  const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+  await cdp.send('Emulation.clearDeviceMetricsOverride').catch(() => {});
+  return shot;
+}
+
+/**
  * @param {() => Promise<any>} probe
  * @param {string} what
  * @param {number} [timeoutMs]
@@ -214,6 +268,8 @@ async function main() {
     );
   }
 
+  if (STORE) mkdirSync(join(root, 'store'), { recursive: true });
+
   const userDataDir = await mkdtemp(join(tmpdir(), 'autoapply-'));
   console.log(`▶ launching Chrome\n  extension: ${dist}\n  profile:   ${userDataDir}`);
 
@@ -227,6 +283,9 @@ async function main() {
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-features=DialMediaRouteProvider',
+      // Deliberately no --window-size: capture() forces exact device metrics
+      // through CDP, and sizing the window as well stalled the permission
+      // prompt that chrome.permissions.request raises.
       FIXTURE,
     ],
     // Detached in keep-open mode so the browser outlives this script.
@@ -321,14 +380,19 @@ async function main() {
         () => sw.evaluate(`document.querySelectorAll('#resume-list .resume-item').length`),
         'the résumé list to render',
       );
-      // The résumé manager sits below the profile groups; frame it deliberately
-      // rather than screenshotting whatever happens to be at the top.
+      // Debug runs frame the résumé manager, which is the part most likely to
+      // break. The listing shot instead opens on the profile itself — filled-in
+      // fields say "this is where the answers come from" far better than a view
+      // dominated by an empty textarea and a Reset button.
       await sw.evaluate(
-        `document.getElementById('resume-section').scrollIntoView({ block: 'start' })`,
+        STORE
+          ? `window.scrollTo({ top: 0 })`
+          : `document.getElementById('resume-section').scrollIntoView({ block: 'start' })`,
       );
-      const optionsShot = await sw.send('Page.captureScreenshot', { format: 'png' });
-      await writeFile(join(root, 'drive-options.png'), Buffer.from(optionsShot.data, 'base64'));
-      console.log(`✓ options screenshot → ${join(root, 'drive-options.png')}`);
+      const optionsShot = await capture(sw);
+      const optionsPath = shotPath('drive-options.png', 'screenshot-3-profile.png');
+      await writeFile(optionsPath, Buffer.from(optionsShot.data, 'base64'));
+      console.log(`✓ options screenshot → ${relative(root, optionsPath)}`);
     }
 
     if (KEEP_OPEN) {
@@ -463,15 +527,23 @@ async function main() {
     );
     console.log(`  set stage to Interview → stored as "${persisted}"`);
 
-    const trackerShot = await tracker.send('Page.captureScreenshot', { format: 'png' });
-    await writeFile(join(root, 'drive-tracker.png'), Buffer.from(trackerShot.data, 'base64'));
-    console.log(`✓ tracker screenshot → ${join(root, 'drive-tracker.png')}`);
+    const trackerShot = await capture(tracker);
+    const trackerPath = shotPath('drive-tracker.png', 'screenshot-2-tracker.png');
+    await writeFile(trackerPath, Buffer.from(trackerShot.data, 'base64'));
+    console.log(`✓ tracker screenshot → ${relative(root, trackerPath)}`);
     tracker.close();
 
-    const shot = await tab.send('Page.captureScreenshot', { format: 'png' });
-    const shotPath = join(root, 'drive-screenshot.png');
-    await writeFile(shotPath, Buffer.from(shot.data, 'base64'));
-    console.log(`\n✓ screenshot → ${shotPath}`);
+    // Frame the shot on the part of the form that shows the work: filled fields
+    // with their green outlines, and the two eligibility questions answered
+    // independently. The review overlay is fixed, so it stays in frame.
+    await tab.evaluate(
+      `document.querySelector('fieldset:nth-of-type(3)')?.scrollIntoView({ block: 'start' })`,
+    );
+
+    const shot = await capture(tab);
+    const formPath = shotPath('drive-screenshot.png', 'screenshot-1-fill.png');
+    await writeFile(formPath, Buffer.from(shot.data, 'base64'));
+    console.log(`\n✓ screenshot → ${relative(root, formPath)}`);
 
     sw.close();
     tab.close();

@@ -6,7 +6,6 @@
  * name is a compile error rather than a silently dropped message.
  */
 
-import type { AiAnswer, AiQuestion } from '@/ai/provider';
 import type { FillEvent } from '@/storage/applications';
 
 /** What a fill pass did, as reported back to whoever asked for it. */
@@ -31,13 +30,7 @@ export type ToContent =
 /** Sent by the content script to the service worker. */
 export type ToBackground =
   | { type: 'RECORD_FILL'; event: FillEvent }
-  | { type: 'MARK_SUBMITTED'; id: string }
-  /** The API key never leaves the service worker, so the call is made there. */
-  | { type: 'AI_ANSWER'; questions: AiQuestion[] };
-
-export type AiAnswerResponse =
-  | { ok: true; answers: AiAnswer[] }
-  | { ok: false; error: string };
+  | { type: 'MARK_SUBMITTED'; id: string };
 
 export type Message = ToContent | ToBackground;
 

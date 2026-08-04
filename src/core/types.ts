@@ -121,9 +121,8 @@ export interface FieldReport {
   key?: ValueKey;
   value?: string;
   reason?: string;
-  /** Where a filled value came from. AI answers are shown distinctly, because
-   *  the user should know which answers were generated rather than looked up. */
-  source?: 'rules' | 'ai' | 'resume';
+  /** Where a filled value came from. */
+  source?: 'rules' | 'resume';
 }
 
 export interface FillOptions {

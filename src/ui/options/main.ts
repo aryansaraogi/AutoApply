@@ -11,7 +11,7 @@ import {
   type ProfileKey,
 } from '@/storage/schema';
 import { clearProfile, loadProfile, saveProfile } from '@/storage/profile';
-import { loadApiKey, loadSettings, saveApiKey, saveSettings } from '@/storage/settings';
+import { loadSettings, saveSettings } from '@/storage/settings';
 import {
   addResume,
   deleteResume,
@@ -232,46 +232,14 @@ async function wireResumes(): Promise<void> {
 // ── settings section ────────────────────────────────────────────────────────
 
 async function wireSettings(): Promise<void> {
-  const [settings, apiKey] = await Promise.all([loadSettings(), loadApiKey()]);
+  const settings = await loadSettings();
 
-  const enabled = must<HTMLSelectElement>('ai-enabled');
-  const model = must<HTMLInputElement>('ai-model');
-  const key = must<HTMLInputElement>('ai-key');
-  const keyState = must<HTMLElement>('ai-key-state');
   const highlight = must<HTMLSelectElement>('opt-highlight');
   const track = must<HTMLSelectElement>('opt-track');
 
-  enabled.value = settings.aiEnabled ? 'on' : 'off';
-  model.value = settings.aiModel;
   highlight.value = settings.highlightFills ? 'on' : 'off';
   track.value = settings.trackSubmissions ? 'on' : 'off';
 
-  // The key itself is never rendered back into the input — only whether one exists.
-  const renderKeyState = (present: boolean) => {
-    key.placeholder = present ? '•••••••••• (saved)' : 'sk-ant-…';
-    keyState.textContent = present
-      ? 'A key is saved. Type a new one to replace it, or clear the box and blur to remove it.'
-      : 'No key saved. AI assist stays inactive without one.';
-  };
-  renderKeyState(apiKey !== '');
-
-  enabled.addEventListener('change', async () => {
-    await saveSettings({ aiEnabled: enabled.value === 'on' });
-    status.show('Saved');
-  });
-  model.addEventListener(
-    'input',
-    debounce(async () => {
-      await saveSettings({ aiModel: model.value.trim() });
-      status.show('Saved');
-    }, SAVE_DEBOUNCE_MS),
-  );
-  key.addEventListener('change', async () => {
-    await saveApiKey(key.value);
-    renderKeyState(key.value.trim() !== '');
-    key.value = '';
-    status.show('Saved');
-  });
   highlight.addEventListener('change', async () => {
     await saveSettings({ highlightFills: highlight.value === 'on' });
     status.show('Saved');

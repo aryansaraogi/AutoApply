@@ -19,14 +19,6 @@ export interface OverlayInput {
   requiredUnfilled: number;
   /** Outline the affected controls in the page itself. */
   highlight: boolean;
-  /**
-   * Present only when AI assist is switched on *and* there are unanswered
-   * questions for it to work on. Absent means no button is rendered at all —
-   * assist never runs without an explicit click.
-   */
-  onAssist?: () => Promise<void>;
-  /** Shown after an assist run that could not complete. */
-  assistError?: string;
 }
 
 const HOST_ID = 'autoapply-review-root';
@@ -109,11 +101,9 @@ function outlineFields(input: OverlayInput): () => void {
 }
 
 function outlineColour(report: FieldReport): string | null {
-  // AI answers get their own colour so the user can tell at a glance which
-  // values were generated rather than read out of their profile. These are the
-  // one place the extension draws on someone else's page, so they are picked to
-  // stay legible against both light and dark form backgrounds.
-  if (SUCCESS.includes(report.status)) return report.source === 'ai' ? '#7c3aed' : '#16a34a';
+  // These are the one place the extension draws on someone else's page, so they
+  // are picked to stay legible against both light and dark form backgrounds.
+  if (SUCCESS.includes(report.status)) return '#16a34a';
   if (report.status === 'failed' || report.status === 'ambiguous') return '#ea580c';
   if (report.required) return '#d97706';
   return null;
@@ -139,37 +129,12 @@ function panelElement(input: OverlayInput): HTMLElement {
     panel.append(done);
   }
 
-  if (input.assistError) {
-    const error = document.createElement('p');
-    error.className = 'assist-error';
-    error.textContent = input.assistError;
-    panel.append(error);
-  }
-
-  if (input.onAssist) panel.append(assistButton(input.onAssist));
-
   const footer = document.createElement('p');
   footer.className = 'footer';
   footer.textContent = 'Nothing has been submitted. Review the form, then submit it yourself.';
   panel.append(footer);
 
   return panel;
-}
-
-function assistButton(run: () => Promise<void>): HTMLElement {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'assist';
-  button.textContent = 'Answer remaining with AI';
-
-  button.addEventListener('click', () => {
-    button.disabled = true;
-    button.textContent = 'Asking…';
-    // showOverlay() re-renders the whole panel, replacing this button.
-    void run();
-  });
-
-  return button;
 }
 
 function headerElement(input: OverlayInput): HTMLElement {
@@ -179,15 +144,12 @@ function headerElement(input: OverlayInput): HTMLElement {
   title.className = 'title';
   title.textContent = 'AutoApply';
 
-  const aiCount = input.reports.filter((r) => r.source === 'ai' && r.status === 'filled').length;
-
   const counts = document.createElement('div');
   counts.className = 'counts';
   counts.append(
     chip(`${input.filled} filled`, 'ok'),
     chip(`${input.skipped} skipped`, 'muted'),
   );
-  if (aiCount > 0) counts.append(chip(`${aiCount} by AI — check these`, 'ai'));
   if (input.requiredUnfilled > 0) {
     counts.append(chip(`${input.requiredUnfilled} required left`, 'warn'));
   }
@@ -203,7 +165,7 @@ function headerElement(input: OverlayInput): HTMLElement {
   return header;
 }
 
-function chip(text: string, tone: 'ok' | 'warn' | 'muted' | 'ai'): HTMLElement {
+function chip(text: string, tone: 'ok' | 'warn' | 'muted'): HTMLElement {
   const node = document.createElement('span');
   node.className = `chip ${tone}`;
   node.textContent = text;
@@ -368,34 +330,11 @@ function styleElement(): HTMLStyleElement {
     .chip.ok { background: #e6f5ec; color: #16794a; }
     .chip.warn { background: #fdf2df; color: #8a5a00; }
     .chip.muted { background: var(--hover); color: var(--ink-muted); }
-    .chip.ai { background: #efe9fd; color: #6321c7; }
-
-    .assist {
-      display: block;
-      width: 100%;
-      margin-top: 13px;
-      padding: 9px;
-      border: 1px solid #7c3aed;
-      border-radius: 8px;
-      background: transparent;
-      color: #6321c7;
-      font: inherit;
-      font-weight: 640;
-      cursor: pointer;
-      transition: background 120ms ease;
-    }
-    .assist:hover:not(:disabled) { background: #efe9fd; }
-    .assist:disabled { opacity: 0.55; cursor: default; }
 
     @media (prefers-color-scheme: dark) {
       .chip.ok { background: #102b1e; color: #4ecf94; }
       .chip.warn { background: #2e2311; color: #e0ad63; }
-      .chip.ai { background: #241243; color: #cbb6fb; }
-      .assist { border-color: #8b5cf6; color: #cbb6fb; }
-      .assist:hover:not(:disabled) { background: rgb(139 92 246 / 16%); }
     }
-
-    .assist-error { margin: 10px 0 0; color: #c2410c; font-size: 12px; }
 
     h2 {
       margin: 15px 0 7px;

@@ -279,7 +279,7 @@ export const PROFILE_FIELDS = [
     label: 'Résumé (plain text)',
     group: 'documents',
     control: 'textarea',
-    help: 'Paste your résumé here. Used for long-answer questions when AI assist is on.',
+    help: 'Paste your résumé here for forms that ask for it as text rather than a file.',
   },
 ] as const satisfies readonly ProfileFieldSpec[];
 

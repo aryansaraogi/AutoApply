@@ -116,25 +116,34 @@ still empty?" always has an answer on screen.
 
 ---
 
-## Optional AI assist
+## No network access
 
-Off by default and entirely optional — the extension is fully functional without
-it.
+The extension makes **no network requests of any kind** — there is no `fetch`, no
+`XMLHttpRequest`, and no third-party runtime dependency in it. No account, no
+server, no analytics. Everything lives in `chrome.storage.local` on your machine.
 
-When you switch it on in Options and paste your own Anthropic API key, an
-**Answer remaining with AI** button appears in the review panel. It:
+See [PRIVACY.md](PRIVACY.md).
 
-- runs **only when you click it** — never automatically, never on page load
-- sees **only** the questions the deterministic rules could not map; sensitive
-  fields, consent boxes, uploads and compound eligibility questions are never sent
-- is instructed to return an empty answer rather than invent anything
-- must return one of the field's exact options for any dropdown
-- marks its answers in a distinct colour so you always know which values were
-  generated rather than looked up
+> An optional AI assist (bring-your-own API key, for questions the rules could not
+> map) was built and then pulled before v1.0.0: it had never been exercised against
+> a real key, and its host permission was missing so its first call would have
+> failed anyway. It can return once it is actually tested.
 
-Your key is stored under its own key in `chrome.storage.local` and is read only by
-the background service worker — it never enters a page's context, where other
-scripts on that page could reach it.
+---
+
+## Releasing
+
+```bash
+npm run icons        # regenerate icons/ (only when the mark changes)
+npm run screenshots  # store/ listing images at 1280×800
+npm run package      # release build + releases/autoapply-<version>.zip
+```
+
+`npm run package` refuses to build if `dist/` contains sourcemaps, TypeScript, or
+anything else that should not be published, and checks that `manifest.json` and
+`package.json` agree on the version. Everything the Chrome Web Store dashboard
+asks for — descriptions, permission justifications, data-use answers — is written
+out in [STORE-LISTING.md](STORE-LISTING.md).
 
 ---
 
@@ -143,7 +152,7 @@ scripts on that page could reach it.
 ```bash
 npm run build       # typecheck, build, verify every manifest reference resolves
 npm run watch       # rebuild both bundles on change
-npm test            # 214 unit + integration tests
+npm test            # 200 unit + integration tests
 npm run typecheck   # tsc for src/ and for the build config, separately
 npm run fixtures    # serve fixtures/ for manual testing
 npm run drive       # launch Chrome with the extension and fill the fixture

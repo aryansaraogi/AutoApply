@@ -11,7 +11,7 @@ const dir = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  * emptyOutDir is off because this build runs after the main one and must not
  * delete its output.
  */
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   resolve: {
     alias: { '@': dir('./src') },
   },
@@ -19,7 +19,8 @@ export default defineConfig({
     outDir: dir('./dist'),
     emptyOutDir: false,
     target: 'chrome116',
-    sourcemap: true,
+    // See vite.config.ts — the store build drops sourcemaps.
+    sourcemap: mode !== 'release',
     lib: {
       entry: dir('./src/content/index.ts'),
       formats: ['iife'],
@@ -27,4 +28,4 @@ export default defineConfig({
       fileName: () => 'content.js',
     },
   },
-});
+}));

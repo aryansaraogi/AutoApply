@@ -12,13 +12,12 @@ import { fillFields } from '@/core/fill';
 import { harvest } from '@/core/harvest';
 import { extractJobMeta } from '@/core/jobMeta';
 import { sendToBackground, type FillSummary, type PageDescription, type ToContent } from '@/core/messages';
-import { DEFAULT_FILL_OPTIONS, type FieldDescriptor, type FieldReport } from '@/core/types';
+import { DEFAULT_FILL_OPTIONS, type FieldDescriptor } from '@/core/types';
 import { loadProfile } from '@/storage/profile';
 import { defaultResume, getResumeBytes } from '@/storage/resumes';
-import { aiReady, loadSettings } from '@/storage/settings';
+import { loadSettings } from '@/storage/settings';
 import { showOverlay } from '@/ui/overlay';
 import type { ResumePayload } from '@/core/attach';
-import { questionsFor, runAssist } from './assist';
 
 /**
  * Reads the résumé to attach, bytes included. Only called at fill time — the
@@ -76,10 +75,9 @@ function pageUrl(): string {
 let recordId: string | null = null;
 
 async function runFill(): Promise<FillSummary> {
-  const [profile, settings, assistAvailable, resume] = await Promise.all([
+  const [profile, settings, resume] = await Promise.all([
     loadProfile(),
     loadSettings(),
-    aiReady(),
     loadResumePayload(),
   ]);
   const fields = harvestPage();
@@ -92,36 +90,14 @@ async function runFill(): Promise<FillSummary> {
     resume,
   );
 
-  const fieldMap = new Map(fields.map((field) => [field.id, field]));
-
-  /**
-   * Re-renders the panel. Assist replaces the reports rather than accumulating,
-   * so a second click asks only about what is still unanswered.
-   */
-  const render = (reports: readonly FieldReport[], assistError?: string): void => {
-    const filled = reports.filter((r) => r.status === 'filled').length;
-    const canAssist = assistAvailable && questionsFor(reports, fieldMap).length > 0;
-
-    showOverlay({
-      reports,
-      fields: fieldMap,
-      filled,
-      skipped: reports.length - filled,
-      requiredUnfilled: reports.filter(
-        (r) => r.required && r.status !== 'filled' && r.status !== 'preserved',
-      ).length,
-      highlight: settings.highlightFills,
-      assistError,
-      onAssist: canAssist
-        ? async () => {
-            const assisted = await runAssist(reports, fieldMap);
-            render(assisted.reports, assisted.error);
-          }
-        : undefined,
-    });
-  };
-
-  render(result.reports);
+  showOverlay({
+    reports: result.reports,
+    fields: new Map(fields.map((field) => [field.id, field])),
+    filled: result.filled,
+    skipped: result.skipped,
+    requiredUnfilled: result.requiredUnfilled,
+    highlight: settings.highlightFills,
+  });
 
   const description = describePage();
 
