@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoApply — Profile</title>
+  </head>
+  <body class="options">
+    <header class="options-header">
+      <div>
+        <h1>AutoApply profile</h1>
+        <p class="muted small">
+          Stored only on this computer. Nothing is uploaded anywhere.
+        </p>
+      </div>
+      <div class="row">
+        <span id="save-status" class="small muted" role="status" aria-live="polite"></span>
+      </div>
+    </header>
+
+    <main class="options-body">
+      <nav id="group-nav" class="group-nav" aria-label="Profile sections"></nav>
+
+      <div class="options-content">
+        <form id="profile-form" autocomplete="off"></form>
+
+        <section class="card" id="resume-section">
+          <h2>Résumés</h2>
+          <p class="muted small ai-blurb">
+            Stored on this computer and attached automatically to résumé uploads on
+            application forms. Cover-letter and other uploads are always left to you.
+            PDF, DOCX, DOC, RTF and TXT are accepted.
+          </p>
+
+          <div class="resume-add">
+            <input
+              type="file"
+              id="resume-file"
+              accept=".pdf,.docx,.doc,.rtf,.txt"
+              aria-label="Choose a résumé file"
+            />
+            <button type="button" id="resume-add" class="primary">Add résumé</button>
+          </div>
+          <p id="resume-error" class="small resume-error" role="alert"></p>
+
+          <ul id="resume-list" class="resume-list"></ul>
+          <p id="resume-empty" class="muted small">
+            No résumé saved. Résumé uploads will be left for you to attach by hand.
+          </p>
+        </section>
+
+        <section class="card" id="ai-section">
+          <h2>AI assist <span class="pill warn">Optional</span></h2>
+          <p class="muted small ai-blurb">
+            Off by default. When enabled, fields the rules could not match are sent
+            to your own API key, on demand only — never automatically. Your key stays
+            in local storage and is used from the extension's background worker.
+          </p>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="ai-enabled">Enable AI assist</label>
+              <select id="ai-enabled">
+                <option value="off">Off</option>
+                <option value="on">On</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="ai-model">Model</label>
+              <input id="ai-model" type="text" spellcheck="false" />
+            </div>
+            <div class="field field-wide">
+              <label for="ai-key">Anthropic API key</label>
+              <input id="ai-key" type="password" spellcheck="false" placeholder="sk-ant-…" />
+              <p class="muted small field-help" id="ai-key-state"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="behaviour-section">
+          <h2>Behaviour</h2>
+          <div class="field-grid">
+            <div class="field">
+              <label for="opt-highlight">Highlight filled fields</label>
+              <select id="opt-highlight">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="opt-track">Track submissions in history</label>
+              <select id="opt-track">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card danger-zone">
+          <h2>Reset</h2>
+          <p class="muted small">Clears every profile field. Your application history is kept.</p>
+          <button type="button" id="clear-profile" class="danger">Clear profile</button>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./ui/options/main.ts"></script>
+  </body>
+</html>

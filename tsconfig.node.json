@@ -1,0 +1,19 @@
+{
+  "//": "Build tooling only. Kept separate so Node globals stay out of src/.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["*.config.ts", "scripts/**/*.mjs"]
+}

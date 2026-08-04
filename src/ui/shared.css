@@ -1,0 +1,188 @@
+/* Shared chrome for the options page and the sidepanel.
+   Both light and dark are styled — extension pages follow the browser theme. */
+
+:root {
+  --bg: #ffffff;
+  --bg-sunken: #f6f7f9;
+  --bg-raised: #ffffff;
+  --border: #dfe3e8;
+  --border-strong: #c4cad2;
+  --text: #14181f;
+  --text-muted: #5c6672;
+  --accent: #2f5bd8;
+  --accent-contrast: #ffffff;
+  --ok: #1a7f4b;
+  --ok-bg: #e7f5ed;
+  --warn: #9a6400;
+  --warn-bg: #fdf3e0;
+  --danger: #b3261e;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgb(20 24 31 / 8%), 0 4px 12px rgb(20 24 31 / 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16191e;
+    --bg-sunken: #1c2027;
+    --bg-raised: #21262e;
+    --border: #333a44;
+    --border-strong: #46505d;
+    --text: #e8ebef;
+    --text-muted: #9aa4b1;
+    --accent: #7d9dff;
+    --accent-contrast: #10131a;
+    --ok: #5ed39a;
+    --ok-bg: #16301f;
+    --warn: #e5b567;
+    --warn-bg: #322611;
+    --danger: #f2857c;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+/* ── form controls ───────────────────────────────────────────────────────── */
+
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+button {
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ── layout primitives ───────────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pill.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.pill.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}

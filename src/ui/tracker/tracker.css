@@ -1,0 +1,197 @@
+.tracker {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.tracker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tracker-header h1 {
+  font-size: 22px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0 12px;
+}
+
+.controls input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.sort-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sort-field select {
+  width: auto;
+}
+
+/* ── stage filter ────────────────────────────────────────────────────────── */
+
+.stage-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.stage-chip {
+  padding: 5px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.stage-chip:hover {
+  border-color: var(--accent);
+}
+
+.stage-chip[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.stage-chip .count {
+  opacity: 0.7;
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── grid ────────────────────────────────────────────────────────────────── */
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.grid th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.grid td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.grid tr.closed td:not(:last-child) {
+  opacity: 0.55;
+}
+
+.role-link {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.role-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.col-company {
+  white-space: nowrap;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-stage select {
+  width: auto;
+  min-width: 116px;
+  padding: 4px 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.col-applied {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-notes input {
+  padding: 5px 8px;
+  font-size: 12px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.col-notes input:hover {
+  border-color: var(--border-strong);
+}
+
+.col-notes input:focus-visible {
+  background: var(--bg-raised);
+}
+
+.col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.icon-button {
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.icon-button:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.stage-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 7px;
+  vertical-align: baseline;
+}
+
+.empty {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

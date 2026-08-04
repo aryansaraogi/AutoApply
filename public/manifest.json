@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "AutoApply",
+  "version": "0.1.0",
+  "description": "Fills job applications from a profile stored on your machine. Highlights what it filled and what it skipped — you always submit yourself.",
+
+  "permissions": ["storage", "unlimitedStorage", "activeTab", "scripting", "sidePanel"],
+
+  "host_permissions": [
+    "https://*.greenhouse.io/*",
+    "https://jobs.lever.co/*",
+    "https://jobs.ashbyhq.com/*",
+    "https://apply.workable.com/*",
+    "https://jobs.smartrecruiters.com/*",
+    "https://*.myworkdayjobs.com/*"
+  ],
+
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_title": "AutoApply"
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+
+  "options_page": "options.html",
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.greenhouse.io/*",
+        "https://jobs.lever.co/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://apply.workable.com/*",
+        "https://jobs.smartrecruiters.com/*",
+        "https://*.myworkdayjobs.com/*"
+      ],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ]
+}

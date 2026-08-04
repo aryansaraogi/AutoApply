@@ -1,0 +1,114 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  min-width: 300px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header h1 {
+  font-size: 16px;
+}
+
+.link-button {
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.row.space-between {
+  justify-content: space-between;
+}
+
+.page-target {
+  margin: 8px 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.fill-button {
+  width: 100%;
+  padding: 9px;
+}
+
+.fill-result {
+  margin: 8px 0;
+  min-height: 1em;
+}
+
+.fill-result.ok {
+  color: var(--ok);
+}
+
+.fill-result.warn {
+  color: var(--warn);
+}
+
+.fill-result.error {
+  color: var(--danger);
+}
+
+#profile-hint {
+  margin-top: 6px;
+}
+
+/* ── history ─────────────────────────────────────────────────────────────── */
+
+.history-head {
+  margin-bottom: 8px;
+}
+
+.small-button {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.history-role {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.history-meta {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.history-item a {
+  text-decoration: none;
+}
+
+.history-item a:hover {
+  text-decoration: underline;
+}

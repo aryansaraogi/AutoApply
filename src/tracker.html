@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoApply — Job tracker</title>
+  </head>
+  <body class="tracker">
+    <header class="tracker-header">
+      <div>
+        <h1>Job tracker</h1>
+        <p class="muted small" id="summary">—</p>
+      </div>
+      <div class="row">
+        <button type="button" id="export-csv">Export CSV</button>
+        <button type="button" id="open-options">Profile</button>
+      </div>
+    </header>
+
+    <section class="controls">
+      <input
+        type="text"
+        id="search"
+        placeholder="Search company, role, notes…"
+        autocomplete="off"
+        aria-label="Search applications"
+      />
+      <label class="sort-field" for="sort">
+        Sort
+        <select id="sort">
+          <option value="updated">Recently updated</option>
+          <option value="created">Date applied</option>
+          <option value="company">Company</option>
+          <option value="stage">Stage</option>
+        </select>
+      </label>
+    </section>
+
+    <nav class="stage-filter" id="stage-filter" aria-label="Filter by stage"></nav>
+
+    <table class="grid" id="grid">
+      <thead>
+        <tr>
+          <th scope="col">Role</th>
+          <th scope="col">Company</th>
+          <th scope="col">Stage</th>
+          <th scope="col">Applied</th>
+          <th scope="col">Notes</th>
+          <th scope="col"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <p id="empty" class="empty muted"></p>
+
+    <script type="module" src="./ui/tracker/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+.options {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+.options-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.options-body {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .options-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.group-nav {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.group-nav a {
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.group-nav a:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+.options-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 14px;
+  margin-top: 8px;
+}
+
+.field {
+  min-width: 0;
+}
+
+/* Long answers and anything with a verbose label get the full row. */
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field-help {
+  margin-top: 4px;
+}
+
+.ai-blurb {
+  margin-top: 6px;
+  max-width: 68ch;
+}
+
+/* ── résumés ─────────────────────────────────────────────────────────────── */
+
+.resume-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.resume-add input[type='file'] {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.resume-add button {
+  white-space: nowrap;
+}
+
+.resume-error {
+  margin-top: 6px;
+  color: var(--danger);
+  min-height: 1em;
+}
+
+.resume-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resume-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+.resume-item.is-default {
+  border-color: var(--accent);
+}
+
+.resume-label {
+  min-width: 0;
+  padding: 3px 6px;
+  border-color: transparent;
+  background: transparent;
+  font-weight: 600;
+}
+
+.resume-label:hover {
+  border-color: var(--border-strong);
+}
+
+.resume-meta {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.resume-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.resume-actions button {
+  padding: 3px 9px;
+  font-size: 12px;
+}
+
+.danger-zone {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+
+.danger-zone button {
+  margin-top: 10px;
+}

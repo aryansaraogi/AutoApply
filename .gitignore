@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.zip
+.DS_Store
+
+# Chrome for Testing, downloaded on demand by `npm run drive`.
+chrome/
+drive-*.png
+
+# Pages captured from real ATS sites for offline iteration. They are large and
+# can contain personal data if saved mid-application, so they stay local.
+# Hand-written fixtures (sample-*.html) are committed.
+fixtures/captured-*.html

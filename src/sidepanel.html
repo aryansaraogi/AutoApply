@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoApply</title>
+  </head>
+  <body class="panel">
+    <header class="panel-header">
+      <h1>AutoApply</h1>
+      <button type="button" id="open-options" class="link-button">Profile</button>
+    </header>
+
+    <section class="card" id="page-card">
+      <div class="row space-between">
+        <h2>This page</h2>
+        <span id="adapter-pill" class="pill warn">Checking…</span>
+      </div>
+      <p id="page-target" class="muted small page-target">—</p>
+      <button type="button" id="fill-button" class="primary fill-button" disabled>
+        Fill this page
+      </button>
+      <button type="button" id="enable-button" class="fill-button" hidden>
+        Enable AutoApply on this site
+      </button>
+      <p id="fill-result" class="small fill-result" role="status" aria-live="polite"></p>
+      <p class="muted small">AutoApply never submits a form. You review, then submit.</p>
+    </section>
+
+    <section class="card" id="profile-card">
+      <div class="row space-between">
+        <h2>Profile</h2>
+        <span id="profile-pill" class="pill">—</span>
+      </div>
+      <p id="profile-hint" class="muted small"></p>
+    </section>
+
+    <section class="history">
+      <div class="row space-between history-head">
+        <h2>Recent</h2>
+        <button type="button" id="open-tracker" class="small-button">Open tracker</button>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+      <p id="history-empty" class="muted small">
+        Applications you fill will be listed here.
+      </p>
+    </section>
+
+    <script type="module" src="./ui/sidepanel/main.ts"></script>
+  </body>
+</html>

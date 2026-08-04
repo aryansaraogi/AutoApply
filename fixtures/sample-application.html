@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Senior Platform Engineer — Northwind Labs</title>
+    <meta property="og:site_name" content="Northwind Labs" />
+    <meta property="og:title" content="Senior Platform Engineer — Northwind Labs" />
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; }
+      h1 { font-size: 22px; }
+      fieldset { margin: 18px 0; padding: 12px 14px; border: 1px solid #ccc; border-radius: 6px; }
+      .field { margin: 14px 0; }
+      .field-label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+      input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+      input[type="number"], input[type="date"], select, textarea {
+        width: 100%; padding: 7px; border: 1px solid #999; border-radius: 4px; font: inherit;
+      }
+      textarea { min-height: 90px; }
+      .note { color: #666; font-size: 13px; }
+      .sr-only { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    </style>
+  </head>
+  <body>
+    <h1>Senior Platform Engineer</h1>
+    <p class="note">
+      Local test fixture. Mirrors the markup patterns real ATS forms use — no data leaves this page.
+    </p>
+
+    <form id="application">
+      <fieldset>
+        <legend>About you</legend>
+
+        <!-- label[for] — the easy case -->
+        <div class="field">
+          <label for="first_name">First Name *</label>
+          <input type="text" id="first_name" name="first_name" required />
+        </div>
+        <div class="field">
+          <label for="last_name">Last Name *</label>
+          <input type="text" id="last_name" name="last_name" required />
+        </div>
+
+        <!-- autocomplete attribute with section tokens -->
+        <div class="field">
+          <label for="contact">Contact</label>
+          <input type="email" id="contact" name="candidate[email]" autocomplete="section-main email" required />
+        </div>
+
+        <!-- no <label> at all: a styled div acts as one -->
+        <div class="field">
+          <span class="field-label">Mobile Number</span>
+          <input type="tel" name="phone" />
+        </div>
+
+        <!-- wrapping label containing a select: must not read option text as the label -->
+        <div class="field">
+          <label>
+            Country
+            <select name="country">
+              <option value="">Select…</option>
+              <option value="us">United States</option>
+              <option value="umi">United States Minor Outlying Islands</option>
+              <option value="ca">Canada</option>
+              <option value="gb">United Kingdom</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="city">City</label>
+          <input type="text" id="city" name="city" />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Links</legend>
+        <div class="field">
+          <label for="li">LinkedIn Profile</label>
+          <input type="url" id="li" name="urls[LinkedIn]" />
+        </div>
+        <div class="field">
+          <label for="gh">GitHub URL</label>
+          <input type="url" id="gh" name="urls[GitHub]" />
+        </div>
+        <div class="field">
+          <label for="site">Company website</label>
+          <input type="url" id="site" name="employer_site" />
+          <p class="note">Decoy: must not receive your personal portfolio.</p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Experience</legend>
+        <div class="field">
+          <label for="co">Current Company</label>
+          <input type="text" id="co" name="current_company" />
+        </div>
+        <div class="field">
+          <label for="prev">Previous Employer</label>
+          <input type="text" id="prev" name="previous_employer" />
+          <p class="note">Decoy: must stay empty.</p>
+        </div>
+        <div class="field">
+          <label for="title">Current Job Title</label>
+          <input type="text" id="title" name="current_title" />
+        </div>
+        <div class="field">
+          <label for="yrs">Years of relevant experience</label>
+          <input type="number" id="yrs" name="years_experience" />
+        </div>
+        <div class="field">
+          <label for="sal">Desired Salary</label>
+          <input type="number" id="sal" name="desired_salary" />
+        </div>
+        <div class="field">
+          <label for="start">Earliest start date</label>
+          <input type="date" id="start" name="start_date" />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Are you legally authorized to work in the United States?</legend>
+        <label><input type="radio" name="work_auth" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="work_auth" value="No" /> No</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Will you now or in the future require visa sponsorship?</legend>
+        <label><input type="radio" name="sponsorship" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="sponsorship" value="No" /> No</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Voluntary self-identification</legend>
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="">Decline to self-identify</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Non-binary</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="vet">Veteran status</label>
+          <select id="vet" name="veteran_status">
+            <option value="">Select…</option>
+            <option>I am not a protected veteran</option>
+            <option>I identify as one or more of the classifications of a protected veteran</option>
+            <option>I do not wish to answer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dis">Disability status</label>
+          <select id="dis" name="disability_status">
+            <option value="">Select…</option>
+            <option>No, I do not have a disability and have not had one in the past</option>
+            <option>Yes, I have a disability, or have had one in the past</option>
+            <option>I do not want to answer</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Anything else</legend>
+        <div class="field">
+          <label for="heard">How did you hear about us?</label>
+          <input type="text" id="heard" name="how_heard" />
+        </div>
+        <div class="field">
+          <label for="cover">Cover Letter</label>
+          <textarea id="cover" name="cover_letter"></textarea>
+        </div>
+        <div class="field">
+          <label for="why">Why do you want to work here? *</label>
+          <textarea id="why" name="why_us" required></textarea>
+          <p class="note">
+            Company-specific: must stay empty and be listed as needing you, even
+            though a default cover letter is stored.
+          </p>
+        </div>
+        <div class="field">
+          <label for="resume">Resume</label>
+          <input type="file" id="resume" name="resume" />
+          <p class="note">Must never be touched.</p>
+        </div>
+        <div class="field">
+          <label for="pw">Create a password</label>
+          <input type="text" id="pw" name="password" />
+          <p class="note">Sensitive: must be refused outright.</p>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" name="consent" required /> I agree to the privacy policy</label>
+          <p class="note">Consent: must never be ticked automatically.</p>
+        </div>
+      </fieldset>
+
+      <!-- Exercises the shadow-DOM traversal path -->
+      <fieldset>
+        <legend>Custom widget (shadow DOM)</legend>
+        <div id="shadow-host"></div>
+      </fieldset>
+
+      <p><button type="submit">Submit application</button></p>
+    </form>
+
+    <script>
+      // Wrapped so the fixture can be re-executed in one JS context (the test
+      // harness reloads it between cases) without redeclaring bindings.
+      (function () {
+      const host = document.getElementById('shadow-host');
+      if (host.shadowRoot) return;
+      const root = host.attachShadow({ mode: 'open' });
+      root.innerHTML = `
+        <style>
+          .f { margin: 6px 0; }
+          label { display:block; font-weight:600; font-size:13px; margin-bottom:4px; }
+          input { width:100%; padding:7px; border:1px solid #999; border-radius:4px; font:inherit; }
+        </style>
+        <div class="f">
+          <label for="pronouns">Pronouns</label>
+          <input type="text" id="pronouns" name="pronouns" />
+        </div>`;
+
+      // Prove nothing is submitted behind the user's back.
+      document.getElementById('application').addEventListener('submit', (event) => {
+        event.preventDefault();
+        alert('Fixture: submit intercepted. A real form would post here.');
+      });
+      })();
+    </script>
+  </body>
+</html>
