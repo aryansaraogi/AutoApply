@@ -10,6 +10,7 @@ import {
   type ApplicationRecord,
 } from '@/storage/applications';
 import { sendToTab, type FillSummary, type PageDescription } from '@/core/messages';
+import { requestAllSiteAccess } from '@/storage/permissions';
 
 function must<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -79,9 +80,34 @@ async function enableOnCurrentSite(): Promise<void> {
   await refreshPageCard();
 }
 
-/** Chrome's own site-access controls for this extension. */
-function openSiteAccessSettings(): void {
-  void chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` });
+/**
+ * Grants access to every site in one prompt.
+ *
+ * The browser's own site-access page lists only the six declared job boards, so
+ * it cannot be used to add anything else — leaving the per-site flow, which is
+ * blocked until the extension can read the URL. This is the way out for someone
+ * applying through many different company careers pages. Reversible from the
+ * profile page.
+ */
+async function grantAllSites(): Promise<void> {
+  const result = must<HTMLElement>('fill-result');
+  const granted = await requestAllSiteAccess();
+
+  if (!granted) {
+    result.className = 'small fill-result warn';
+    result.textContent = 'Declined — AutoApply still works on the six supported job boards.';
+    return;
+  }
+
+  result.className = 'small fill-result muted';
+  result.textContent = '';
+  // The content script is not injected retroactively into pages already open.
+  if (currentTabId !== null) {
+    await chrome.scripting
+      .executeScript({ target: { tabId: currentTabId, allFrames: true }, files: ['content.js'] })
+      .catch(() => undefined);
+  }
+  await refreshPageCard();
 }
 
 async function refreshPageCard(): Promise<void> {
@@ -118,9 +144,9 @@ async function refreshPageCard(): Promise<void> {
     pill.textContent = 'Needs access';
     pill.className = 'pill warn';
     target.textContent =
-      'Chrome hides this page’s address until you allow AutoApply on this site. ' +
-      'Right-click the AutoApply icon in the toolbar, choose “This can read and change ' +
-      'site data”, then pick this site — or use the button below.';
+      'Chrome hides this page’s address until AutoApply is allowed here, so it cannot ' +
+      'offer to turn on for this one site by name. Granting every site once fixes it for ' +
+      'good — you can take it back on the profile page.';
     grant.hidden = false;
     return;
   }
@@ -272,7 +298,7 @@ async function main(): Promise<void> {
   must<HTMLButtonElement>('enable-button').addEventListener('click', () =>
     void enableOnCurrentSite(),
   );
-  must<HTMLButtonElement>('grant-button').addEventListener('click', openSiteAccessSettings);
+  must<HTMLButtonElement>('grant-button').addEventListener('click', () => void grantAllSites());
   must<HTMLButtonElement>('open-tracker').addEventListener('click', openTracker);
 
   // A stage change made on the tracker page should show here without a reopen.

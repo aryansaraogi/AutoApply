@@ -15,6 +15,11 @@ import {
 import { clearProfile, loadProfile, saveProfile } from '@/storage/profile';
 import { loadSettings, saveSettings } from '@/storage/settings';
 import {
+  hasAllSiteAccess,
+  requestAllSiteAccess,
+  revokeAllSiteAccess,
+} from '@/storage/permissions';
+import {
   addResume,
   deleteResume,
   formatBytes,
@@ -242,6 +247,8 @@ async function wireSettings(): Promise<void> {
   highlight.value = settings.highlightFills ? 'on' : 'off';
   track.value = settings.trackSubmissions ? 'on' : 'off';
 
+  await wireAllSites();
+
   highlight.addEventListener('change', async () => {
     await saveSettings({ highlightFills: highlight.value === 'on' });
     status.show('Saved');
@@ -250,6 +257,41 @@ async function wireSettings(): Promise<void> {
     await saveSettings({ trackSubmissions: track.value === 'on' });
     status.show('Saved');
   });
+}
+
+/**
+ * The one-off grant covering every site.
+ *
+ * Not a stored setting — it reads and writes the browser's actual permission, so
+ * it stays honest if the user revokes access from the browser's own controls.
+ */
+async function wireAllSites(): Promise<void> {
+  const select = must<HTMLSelectElement>('opt-allsites');
+  const help = must<HTMLElement>('allsites-help');
+
+  const render = (granted: boolean) => {
+    select.value = granted ? 'on' : 'off';
+    help.textContent = granted
+      ? 'AutoApply can read and fill any page you open. Switch back to stop that ' +
+        'immediately — nothing is kept.'
+      : 'On other sites you will be asked each time, and Chrome hides the address until ' +
+        'you agree, so it cannot ask for one site by name.';
+  };
+
+  render(await hasAllSiteAccess());
+
+  select.addEventListener('change', async () => {
+    // Both calls need the click that triggered this event, so neither may be
+    // awaited behind anything else first.
+    const wanted = select.value === 'on';
+    const ok = wanted ? await requestAllSiteAccess() : await revokeAllSiteAccess();
+    if (ok) status.show(wanted ? 'Access granted' : 'Access removed');
+    render(await hasAllSiteAccess());
+  });
+
+  // Keep in step with changes made from the browser's own extension controls.
+  chrome.permissions.onAdded.addListener(() => void hasAllSiteAccess().then(render));
+  chrome.permissions.onRemoved.addListener(() => void hasAllSiteAccess().then(render));
 }
 
 // ── backup ──────────────────────────────────────────────────────────────────
