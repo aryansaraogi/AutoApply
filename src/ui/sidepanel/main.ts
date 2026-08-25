@@ -90,7 +90,31 @@ async function refreshPageCard(): Promise<void> {
   currentTabUrl = tab?.url ?? null;
   enable.hidden = true;
 
-  if (!tab?.id || !tab.url || !/^https?:/.test(tab.url)) {
+  if (!tab?.id) {
+    pill.textContent = 'No page';
+    pill.className = 'pill warn';
+    target.textContent = 'Open a job application to get started.';
+    button.disabled = true;
+    return;
+  }
+
+  // A tab with no readable URL is not an empty tab. Chrome hides `url` for any
+  // site the extension has no host permission for, which is every site outside
+  // the six supported boards — exactly where "enable on this site" is meant to
+  // help. Clicking the toolbar icon grants activeTab for that tab, which makes
+  // the URL readable long enough to ask for the origin properly.
+  if (!tab.url) {
+    pill.textContent = 'Needs access';
+    pill.className = 'pill warn';
+    target.textContent =
+      'Click the AutoApply icon in the toolbar while this page is open. Chrome only ' +
+      'reveals the address of a site AutoApply has been granted access to, so it cannot ' +
+      'offer to turn on here until you do.';
+    button.disabled = true;
+    return;
+  }
+
+  if (!/^https?:/.test(tab.url)) {
     pill.textContent = 'No page';
     pill.className = 'pill warn';
     target.textContent = 'Open a job application to get started.';
