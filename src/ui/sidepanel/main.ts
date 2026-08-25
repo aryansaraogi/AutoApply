@@ -96,12 +96,16 @@ async function refreshPageCard(): Promise<void> {
   currentTabUrl = tab?.url ?? null;
   enable.hidden = true;
   grant.hidden = true;
+  // A disabled primary button still dominates the card, pulling attention to the
+  // one thing that cannot be done while the actionable button sits below it in a
+  // quieter style. Hide it outright until filling is genuinely possible.
+  button.hidden = true;
+  button.disabled = true;
 
   if (!tab?.id) {
     pill.textContent = 'No page';
     pill.className = 'pill warn';
     target.textContent = 'Open a job application to get started.';
-    button.disabled = true;
     return;
   }
 
@@ -117,7 +121,6 @@ async function refreshPageCard(): Promise<void> {
       'Chrome hides this page’s address until you allow AutoApply on this site. ' +
       'Right-click the AutoApply icon in the toolbar, choose “This can read and change ' +
       'site data”, then pick this site — or use the button below.';
-    button.disabled = true;
     grant.hidden = false;
     return;
   }
@@ -126,7 +129,6 @@ async function refreshPageCard(): Promise<void> {
     pill.textContent = 'No page';
     pill.className = 'pill warn';
     target.textContent = 'Open a job application to get started.';
-    button.disabled = true;
     return;
   }
 
@@ -139,7 +141,6 @@ async function refreshPageCard(): Promise<void> {
       'AutoApply runs automatically on Greenhouse, Lever, Ashby, Workable, SmartRecruiters ' +
       'and Workday. On any other site you can turn it on for this domain, and it will use ' +
       'its generic form handling.';
-    button.disabled = true;
     // The generic adapter handles any ordinary form — it just needs permission
     // for this origin first, which only the user can grant.
     enable.hidden = false;
@@ -156,6 +157,8 @@ async function refreshPageCard(): Promise<void> {
   }
   target.textContent = heading ? `${heading} — ${detail.join(', ')}` : detail.join(', ');
 
+  // The only state where filling is actually possible.
+  button.hidden = false;
   button.disabled = description.fieldCount === 0;
 }
 
