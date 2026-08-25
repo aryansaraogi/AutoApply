@@ -5,6 +5,8 @@ import {
   GROUP_LABELS,
   GROUP_ORDER,
   PROFILE_FIELDS,
+  PROFILE_KEYS,
+  normalizeProfile,
   type FieldGroup,
   type Profile,
   type ProfileFieldSpec,
@@ -250,6 +252,80 @@ async function wireSettings(): Promise<void> {
   });
 }
 
+// ── backup ──────────────────────────────────────────────────────────────────
+
+/**
+ * Export and import the profile as JSON.
+ *
+ * Profiles live in per-browser storage, so a second machine — or a fresh
+ * unpacked install — starts empty, and retyping forty fields is the single most
+ * tedious thing about this extension. Résumé bytes are left out: they would
+ * dwarf the rest of the file, and re-adding one is a single click.
+ *
+ * @param rerender Redraws the form from storage after an import.
+ */
+function wireBackup(rerender: () => Promise<void>): void {
+  const statusLine = must<HTMLElement>('backup-status');
+  const picker = must<HTMLInputElement>('import-file');
+
+  const say = (text: string, tone: '' | 'ok' | 'error' = '') => {
+    statusLine.className = `small backup-status ${tone}`.trim();
+    statusLine.textContent = text;
+  };
+
+  must<HTMLButtonElement>('export-profile').addEventListener('click', async () => {
+    const profile = await loadProfile();
+    const filled = PROFILE_KEYS.filter((key) => profile[key].trim() !== '').length;
+
+    const blob = new Blob([JSON.stringify(profile, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = el('a', {
+      href: url,
+      download: `autoapply-profile-${new Date().toISOString().slice(0, 10)}.json`,
+    });
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+
+    say(`Exported ${filled} filled field${filled === 1 ? '' : 's'}.`, 'ok');
+  });
+
+  must<HTMLButtonElement>('import-profile').addEventListener('click', () => picker.click());
+
+  picker.addEventListener('change', async () => {
+    const file = picker.files?.[0];
+    // Reset immediately so choosing the same file twice still fires a change.
+    picker.value = '';
+    if (!file) return;
+
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        say('That file does not look like a profile export.', 'error');
+        return;
+      }
+
+      // normalizeProfile drops unknown keys and coerces types, so a hand-edited
+      // or stale export cannot put junk into the fill engine.
+      const incoming = normalizeProfile(parsed);
+      const filled = PROFILE_KEYS.filter((key) => incoming[key].trim() !== '').length;
+      if (filled === 0) {
+        say('That file has no recognisable profile fields in it.', 'error');
+        return;
+      }
+
+      if (!confirm(`Replace your profile with ${filled} field(s) from this file?`)) return;
+
+      await saveProfile(incoming);
+      await rerender();
+      say(`Imported ${filled} field${filled === 1 ? '' : 's'}.`, 'ok');
+    } catch {
+      say('Could not read that file — it is not valid JSON.', 'error');
+    }
+  });
+}
+
 // ── boot ────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -258,6 +334,12 @@ async function main(): Promise<void> {
 
   buildNav();
   for (const group of GROUP_ORDER) form.append(buildGroup(group, profile));
+
+  const rerender = async (): Promise<void> => {
+    const current = await loadProfile();
+    form.replaceChildren();
+    for (const group of GROUP_ORDER) form.append(buildGroup(group, current));
+  };
 
   const persist = debounce(async () => {
     await saveProfile(collectProfile(form));
@@ -271,12 +353,11 @@ async function main(): Promise<void> {
   must<HTMLButtonElement>('clear-profile').addEventListener('click', async () => {
     if (!confirm('Clear every profile field? Your application history is kept.')) return;
     await clearProfile();
-    form.replaceChildren();
-    const cleared = await loadProfile();
-    for (const group of GROUP_ORDER) form.append(buildGroup(group, cleared));
+    await rerender();
     status.show('Profile cleared');
   });
 
+  wireBackup(rerender);
   await wireResumes();
   await wireSettings();
 }

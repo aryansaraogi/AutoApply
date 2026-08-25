@@ -69,6 +69,21 @@
           </div>
         </section>
 
+        <section class="card" id="backup-section">
+          <h2>Backup</h2>
+          <p class="muted small section-blurb">
+            Saves every profile field to a JSON file, and reads one back. Useful for
+            moving to another computer — profiles are stored per browser, so a fresh
+            install starts empty. Résumé files are not included; add those separately.
+          </p>
+          <div class="row backup-actions">
+            <button type="button" id="export-profile">Export profile</button>
+            <button type="button" id="import-profile">Import profile…</button>
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+          </div>
+          <p id="backup-status" class="small backup-status" role="status" aria-live="polite"></p>
+        </section>
+
         <section class="card danger-zone">
           <h2>Reset</h2>
           <p class="muted small">Clears every profile field. Your application history is kept.</p>

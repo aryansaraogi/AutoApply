@@ -180,6 +180,25 @@ legend {
   font-size: 12px;
 }
 
+.backup-actions {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.backup-status {
+  margin-top: 8px;
+  min-height: 1em;
+  color: var(--text-muted);
+}
+
+.backup-status.ok {
+  color: var(--ok);
+}
+
+.backup-status.error {
+  color: var(--danger);
+}
+
 .danger-zone {
   border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
