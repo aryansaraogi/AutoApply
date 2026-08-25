@@ -27,7 +27,15 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dist = join(root, 'dist');
+
+/**
+ * Which build to load. Defaults to dist/, but set AUTOAPPLY_EXT_DIR to point at
+ * an unpacked release so the drive verifies the artifact that actually ships
+ * rather than the one the build happened to leave behind.
+ */
+const dist = process.env.AUTOAPPLY_EXT_DIR
+  ? resolve(process.env.AUTOAPPLY_EXT_DIR)
+  : join(root, 'dist');
 const PORT = 9222;
 const FIXTURE = 'http://localhost:4321/sample-application.html';
 
