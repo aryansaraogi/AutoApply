@@ -19,6 +19,8 @@ export interface OverlayInput {
   requiredUnfilled: number;
   /** Outline the affected controls in the page itself. */
   highlight: boolean;
+  /** Nothing was filled because there is nothing stored to fill with. */
+  profileIsEmpty?: boolean;
 }
 
 const HOST_ID = 'autoapply-review-root';
@@ -118,6 +120,15 @@ function panelElement(input: OverlayInput): HTMLElement {
   panel.setAttribute('aria-label', 'AutoApply fill summary');
 
   panel.append(headerElement(input));
+
+  if (input.profileIsEmpty) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-profile';
+    empty.textContent =
+      'Your profile is empty, so there was nothing to fill this form with. Open ' +
+      'AutoApply and add your details, then try again.';
+    panel.append(empty);
+  }
 
   const attention = rankAttention(input.reports);
   if (attention.length > 0) {

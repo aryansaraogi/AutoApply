@@ -14,6 +14,7 @@ import { extractJobMeta } from '@/core/jobMeta';
 import { sendToBackground, type FillSummary, type PageDescription, type ToContent } from '@/core/messages';
 import { DEFAULT_FILL_OPTIONS, type FieldDescriptor } from '@/core/types';
 import { loadProfile } from '@/storage/profile';
+import { filledCount } from '@/storage/schema';
 import { defaultResume, getResumeBytes } from '@/storage/resumes';
 import { loadSettings } from '@/storage/settings';
 import { showOverlay } from '@/ui/overlay';
@@ -90,7 +91,12 @@ async function runFill(): Promise<FillSummary> {
     resume,
   );
 
+  // "0 filled, 28 skipped" reads as a broken extension when the real cause is
+  // an empty profile. Say which it is.
+  const profileIsEmpty = filledCount(profile) === 0;
+
   showOverlay({
+    profileIsEmpty,
     reports: result.reports,
     fields: new Map(fields.map((field) => [field.id, field])),
     filled: result.filled,

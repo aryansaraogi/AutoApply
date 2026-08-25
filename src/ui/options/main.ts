@@ -384,6 +384,12 @@ async function main(): Promise<void> {
   };
 
   const persist = debounce(async () => {
+    // collectProfile serialises whatever the form holds right now, so a save
+    // queued before a rebuild -- an import, a clear -- could land while the form
+    // is empty and write 39 blank strings over a real profile, with no error and
+    // nothing on screen to show it happened. A form with no fields in it is
+    // never something the user meant to save.
+    if (form.querySelectorAll('[name]').length === 0) return;
     await saveProfile(collectProfile(form));
     status.show('Saved');
   }, SAVE_DEBOUNCE_MS);
