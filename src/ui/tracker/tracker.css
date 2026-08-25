@@ -109,23 +109,53 @@
   opacity: 0.55;
 }
 
-.role-link {
-  font-weight: 600;
-  color: var(--text);
-  text-decoration: none;
-  overflow-wrap: anywhere;
+/* Editable cells read as text until touched, so the table stays a table rather
+   than a wall of input boxes. */
+.col-role input,
+.col-company input,
+.col-notes input {
+  padding: 5px 8px;
+  font-size: 12px;
+  border-color: transparent;
+  background: transparent;
 }
 
-.role-link:hover {
-  color: var(--accent);
-  text-decoration: underline;
+.col-role input:hover,
+.col-company input:hover,
+.col-notes input:hover {
+  border-color: var(--border-strong);
+}
+
+.col-role input:focus-visible,
+.col-company input:focus-visible,
+.col-notes input:focus-visible {
+  background: var(--bg-raised);
+}
+
+.col-role {
+  min-width: 220px;
+}
+
+.col-role input {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .col-company {
-  white-space: nowrap;
-  max-width: 190px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.open-link {
+  font-size: 12px;
+  font-weight: 550;
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.open-link:hover {
+  background: var(--bg-sunken);
+  text-decoration: underline;
 }
 
 .col-stage select {
@@ -142,24 +172,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.col-notes input {
-  padding: 5px 8px;
-  font-size: 12px;
-  border-color: transparent;
-  background: transparent;
-}
-
-.col-notes input:hover {
-  border-color: var(--border-strong);
-}
-
-.col-notes input:focus-visible {
-  background: var(--bg-raised);
-}
-
 .col-actions {
   text-align: right;
   white-space: nowrap;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .icon-button {

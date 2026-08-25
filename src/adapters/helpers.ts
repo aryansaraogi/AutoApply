@@ -9,6 +9,7 @@
  */
 
 import { visibleTextOf } from '@/core/normalize';
+import { cleanCompany } from '@/core/jobMeta';
 
 /** First non-empty match from a list of candidate selectors. */
 export function textFrom(doc: Document, selectors: readonly string[], maxLength = 140): string {
@@ -30,7 +31,10 @@ export function companyFromPath(location: Location, index = 0): string {
   const segments = location.pathname.split('/').filter(Boolean);
   const segment = segments[index];
   if (!segment || segment.length > 60) return '';
-  return titleCase(segment);
+  // Greenhouse embeds live at /embed/job_app, so the first segment is the word
+  // "embed" — cleanCompany rejects routing words like that rather than titling
+  // them into a plausible-looking employer name.
+  return cleanCompany(titleCase(segment));
 }
 
 export function titleCase(slug: string): string {

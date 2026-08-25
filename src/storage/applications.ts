@@ -150,6 +150,26 @@ export async function setStage(id: string, stage: Stage): Promise<void> {
   await write(records);
 }
 
+/**
+ * Corrects the company or role.
+ *
+ * Extraction is a guess against pages that were never built to be read this
+ * way, so the user gets the final say. An empty string is a legitimate value —
+ * it clears a wrong guess.
+ */
+export async function updateApplication(
+  id: string,
+  patch: { company?: string; role?: string },
+): Promise<void> {
+  const records = await listApplications();
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  if (patch.company !== undefined) record.company = patch.company.trim();
+  if (patch.role !== undefined) record.role = patch.role.trim();
+  record.updatedAt = Date.now();
+  await write(records);
+}
+
 export async function updateNotes(id: string, notes: string): Promise<void> {
   const records = await listApplications();
   const record = records.find((r) => r.id === id);

@@ -10,6 +10,7 @@ import {
   listApplications,
   setStage,
   toCsv,
+  updateApplication,
   updateNotes,
   type ApplicationRecord,
   type Stage,
@@ -137,21 +138,41 @@ function stageSelect(record: ApplicationRecord): HTMLSelectElement {
   return select;
 }
 
-function notesInput(record: ApplicationRecord): HTMLInputElement {
+/**
+ * An editable cell.
+ *
+ * Company and role are extracted from pages that were never built to be read
+ * that way, so they are sometimes wrong — a marketing headline, a URL fragment.
+ * Rather than hiding that, every guessed field is directly correctable.
+ *
+ * Saves are debounced and deliberately do not re-render: redrawing the table
+ * would tear focus out of the field mid-keystroke.
+ */
+function editableCell(options: {
+  value: string;
+  placeholder: string;
+  label: string;
+  className?: string;
+  save: (value: string) => Promise<void>;
+  commit: (value: string) => void;
+}): HTMLInputElement {
   const input = el('input', {
     type: 'text',
-    value: record.notes,
-    placeholder: 'Add a note…',
-    ariaLabel: `Notes for ${record.role || record.company}`,
+    value: options.value,
+    placeholder: options.placeholder,
+    ariaLabel: options.label,
+    className: options.className ?? '',
   });
-  const save = debounce((value: string) => {
-    void updateNotes(record.id, value).then(() => {
-      // Keep the in-memory copy current without a re-render, which would steal
-      // focus from the field the user is still typing in.
-      record.notes = value;
-    });
+
+  const persist = debounce((value: string) => {
+    void options.save(value).then(() => options.commit(value));
   }, NOTES_DEBOUNCE_MS);
-  input.addEventListener('input', () => save(input.value));
+
+  input.addEventListener('input', () => persist(input.value));
+  // Leaving the field should not lose an edit shorter than the debounce.
+  input.addEventListener('blur', () => {
+    void options.save(input.value).then(() => options.commit(input.value));
+  });
   return input;
 }
 
@@ -160,22 +181,34 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
     className: CLOSED_STAGES.includes(record.stage) ? 'closed' : '',
   });
 
-  const roleCell = el('td');
+  const roleCell = el('td', { className: 'col-role' });
   roleCell.append(
-    el('a', {
-      className: 'role-link',
-      href: record.url,
-      target: '_blank',
-      rel: 'noreferrer',
-      textContent: record.role || '(untitled role)',
+    editableCell({
+      value: record.role,
+      placeholder: 'Add a role…',
+      label: `Role at ${record.company || record.host}`,
+      className: 'cell-strong',
+      save: (value) => updateApplication(record.id, { role: value }),
+      commit: (value) => {
+        record.role = value;
+      },
     }),
   );
 
-  const companyCell = el('td', {
-    className: 'col-company',
-    title: record.company || record.host,
-    textContent: record.company || record.host,
-  });
+  const companyCell = el('td', { className: 'col-company' });
+  companyCell.append(
+    editableCell({
+      value: record.company,
+      // The host is a hint, not a value: showing it as placeholder text keeps
+      // the field genuinely empty so a guess is never silently adopted.
+      placeholder: record.host || 'Add a company…',
+      label: `Company for ${record.role || record.host}`,
+      save: (value) => updateApplication(record.id, { company: value }),
+      commit: (value) => {
+        record.company = value;
+      },
+    }),
+  );
 
   const stageCell = el('td', { className: 'col-stage' });
   stageCell.append(stageSelect(record));
@@ -187,9 +220,29 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
   });
 
   const notesCell = el('td', { className: 'col-notes' });
-  notesCell.append(notesInput(record));
+  notesCell.append(
+    editableCell({
+      value: record.notes,
+      placeholder: 'Add a note…',
+      label: `Notes for ${record.role || record.company}`,
+      save: (value) => updateNotes(record.id, value),
+      commit: (value) => {
+        record.notes = value;
+      },
+    }),
+  );
 
   const actionsCell = el('td', { className: 'col-actions' });
+  actionsCell.append(
+    el('a', {
+      className: 'open-link',
+      href: record.url,
+      target: '_blank',
+      rel: 'noreferrer',
+      textContent: 'Open',
+      title: record.url,
+    }),
+  );
   const remove = el('button', {
     type: 'button',
     className: 'icon-button',
