@@ -17,3 +17,6 @@ releases/
 # can contain personal data if saved mid-application, so they stay local.
 # Hand-written fixtures (sample-*.html) are committed.
 fixtures/captured-*.html
+
+# Personal test data (profile exports, sample resumes). Never committed.
+local/
