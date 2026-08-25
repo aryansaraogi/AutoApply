@@ -79,16 +79,23 @@ async function enableOnCurrentSite(): Promise<void> {
   await refreshPageCard();
 }
 
+/** Chrome's own site-access controls for this extension. */
+function openSiteAccessSettings(): void {
+  void chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` });
+}
+
 async function refreshPageCard(): Promise<void> {
   const pill = must<HTMLElement>('adapter-pill');
   const target = must<HTMLElement>('page-target');
   const button = must<HTMLButtonElement>('fill-button');
   const enable = must<HTMLButtonElement>('enable-button');
+  const grant = must<HTMLButtonElement>('grant-button');
 
   const tab = await activeTab();
   currentTabId = tab?.id ?? null;
   currentTabUrl = tab?.url ?? null;
   enable.hidden = true;
+  grant.hidden = true;
 
   if (!tab?.id) {
     pill.textContent = 'No page';
@@ -107,10 +114,11 @@ async function refreshPageCard(): Promise<void> {
     pill.textContent = 'Needs access';
     pill.className = 'pill warn';
     target.textContent =
-      'Click the AutoApply icon in the toolbar while this page is open. Chrome only ' +
-      'reveals the address of a site AutoApply has been granted access to, so it cannot ' +
-      'offer to turn on here until you do.';
+      'Chrome hides this page’s address until you allow AutoApply on this site. ' +
+      'Right-click the AutoApply icon in the toolbar, choose “This can read and change ' +
+      'site data”, then pick this site — or use the button below.';
     button.disabled = true;
+    grant.hidden = false;
     return;
   }
 
@@ -261,11 +269,26 @@ async function main(): Promise<void> {
   must<HTMLButtonElement>('enable-button').addEventListener('click', () =>
     void enableOnCurrentSite(),
   );
+  must<HTMLButtonElement>('grant-button').addEventListener('click', openSiteAccessSettings);
   must<HTMLButtonElement>('open-tracker').addEventListener('click', openTracker);
 
   // A stage change made on the tracker page should show here without a reopen.
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.applications) void refreshHistory();
+  });
+
+  // Granting access fires no tab event, so without this the panel keeps showing
+  // "Needs access" after the user has already allowed the site — which reads as
+  // the extension being broken.
+  chrome.permissions.onAdded.addListener(() => void refreshPageCard());
+  chrome.permissions.onRemoved.addListener(() => void refreshPageCard());
+
+  // Clicking the toolbar icon is what grants activeTab, and it fires no tab
+  // event either — it just focuses this panel. Re-checking on focus is what
+  // turns that click into a visible change.
+  window.addEventListener('focus', () => void refreshPageCard());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void refreshPageCard();
   });
 
   onProfileChanged(() => void refreshProfileCard());
