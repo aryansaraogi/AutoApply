@@ -505,8 +505,10 @@ async function main() {
           const first = rows[0];
           return {
             rows: rows.length,
-            role: first.querySelector('.role-link')?.textContent,
-            company: first.querySelector('.col-company')?.textContent,
+            // Role and company are editable cells, so their text lives in the
+            // input's value, not the cell's textContent.
+            role: first.querySelector('.col-role input')?.value,
+            company: first.querySelector('.col-company input')?.value,
             stage: first.querySelector('.col-stage select')?.value,
             stageOptions: [...first.querySelectorAll('.col-stage option')].map(o => o.value),
             summary: document.getElementById('summary')?.textContent,

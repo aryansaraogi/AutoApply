@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => ({
     // Sourcemaps are 80% of the bundle and publish the full source, so the store
     // build drops them. `vite build --mode release` selects that.
     sourcemap: mode !== 'release',
+    // Chrome loads extension pages in a separate resource world from the preload
+    // cache, so a modulepreload hint can never be used — it is dropped, then
+    // warned about a second time for going unused. Two console warnings per
+    // shared chunk, on every page, for nothing: the modules load fine through
+    // the import graph, and these pages come off local disk, not a network.
+    modulePreload: false,
     rollupOptions: {
       input: {
         'service-worker': dir('./src/background/service-worker.ts'),
