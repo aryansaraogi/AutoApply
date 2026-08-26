@@ -5,7 +5,7 @@
 
 # AutoApply
 
-### Fills job applications from a profile on your machine — and never submits one.
+### Fills job applications from a profile on your machine
 
 You review, then you submit. Every field it fills is outlined; every field it skips comes with a reason.
 
