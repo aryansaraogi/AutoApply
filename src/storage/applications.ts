@@ -65,6 +65,13 @@ export interface ApplicationRecord {
   fieldsFilled: number;
   fieldsSkipped: number;
   notes: string;
+  /**
+   * Set once the user corrects the company or role by hand. Re-filling the same
+   * posting refreshes a record for twelve hours, and without this the extension's
+   * own guess would overwrite the correction the user made precisely because the
+   * guess was wrong.
+   */
+  editedByUser: boolean;
 }
 
 export interface FillEvent {
@@ -73,6 +80,36 @@ export interface FillEvent {
   url: string;
   fieldsFilled: number;
   fieldsSkipped: number;
+}
+
+/**
+ * Serialises the read-modify-write cycles below.
+ *
+ * Every mutator here reads the whole log, changes one field, and writes the
+ * whole log back. Two of those in flight at once both start from the same
+ * snapshot, so the later write carries a stale copy of the other's field and
+ * silently reverts it. Blurring a tracker row's role, company and notes in the
+ * same task loses the first two every time. Chaining the mutations onto one
+ * promise makes each of them read what the previous one wrote.
+ *
+ * This covers the collisions that happen in practice, because every tracker
+ * edit runs in the tracker page. Two extension contexts writing at the same
+ * instant — a fill recording a record while the tracker is open — would still
+ * race, and chrome.storage offers no compare-and-swap to prevent it; they touch
+ * different records, so the window is narrow and the cost is a stale field
+ * rather than a lost row.
+ */
+let mutations: Promise<unknown> = Promise.resolve();
+
+function serialise<T>(work: () => Promise<T>): Promise<T> {
+  const run = mutations.then(work, work);
+  // Swallow here only so one failed mutation cannot break the chain for the
+  // next; the caller still sees its own rejection through `run`.
+  mutations = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
 }
 
 export async function listApplications(): Promise<ApplicationRecord[]> {
@@ -87,38 +124,44 @@ export async function listApplications(): Promise<ApplicationRecord[]> {
 
 /** Records a fill, or refreshes the recent record for the same URL. Returns the
  *  record id so the content script can later advance it to "applied". */
-export async function recordFill(event: FillEvent): Promise<string> {
-  const records = await listApplications();
-  const now = Date.now();
-  const existing = records.find((r) => r.url === event.url && now - r.createdAt < DEDUPE_WINDOW_MS);
+export function recordFill(event: FillEvent): Promise<string> {
+  return serialise(async () => {
+    const records = await listApplications();
+    const now = Date.now();
+    const existing = records.find(
+      (r) => r.url === event.url && now - r.createdAt < DEDUPE_WINDOW_MS,
+    );
 
-  if (existing) {
-    existing.updatedAt = now;
-    existing.fieldsFilled = event.fieldsFilled;
-    existing.fieldsSkipped = event.fieldsSkipped;
-    // Company/role can improve on a second pass once a SPA has finished rendering.
-    if (event.company) existing.company = event.company;
-    if (event.role) existing.role = event.role;
-    await write(records);
-    return existing.id;
-  }
+    if (existing) {
+      existing.updatedAt = now;
+      existing.fieldsFilled = event.fieldsFilled;
+      existing.fieldsSkipped = event.fieldsSkipped;
+      // Company/role can improve on a second pass once a SPA has finished
+      // rendering — but never overwrite a correction the user typed themselves.
+      if (event.company && !existing.editedByUser) existing.company = event.company;
+      if (event.role && !existing.editedByUser) existing.role = event.role;
+      await write(records);
+      return existing.id;
+    }
 
-  const record: ApplicationRecord = {
-    id: crypto.randomUUID(),
-    company: event.company,
-    role: event.role,
-    url: event.url,
-    host: safeHost(event.url),
-    createdAt: now,
-    updatedAt: now,
-    stage: 'draft',
-    stageChangedAt: now,
-    fieldsFilled: event.fieldsFilled,
-    fieldsSkipped: event.fieldsSkipped,
-    notes: '',
-  };
-  await write([record, ...records]);
-  return record.id;
+    const record: ApplicationRecord = {
+      id: crypto.randomUUID(),
+      company: event.company,
+      role: event.role,
+      url: event.url,
+      host: safeHost(event.url),
+      createdAt: now,
+      updatedAt: now,
+      stage: 'draft',
+      stageChangedAt: now,
+      fieldsFilled: event.fieldsFilled,
+      fieldsSkipped: event.fieldsSkipped,
+      notes: '',
+      editedByUser: false,
+    };
+    await write([record, ...records]);
+    return record.id;
+  });
 }
 
 /**
@@ -130,24 +173,28 @@ export async function recordFill(event: FillEvent): Promise<string> {
  * moved themselves — an interview does not get demoted back to applied because
  * the page happened to fire another submit.
  */
-export async function markSubmitted(id: string): Promise<void> {
-  const records = await listApplications();
-  const record = records.find((r) => r.id === id);
-  if (!record || record.stage !== 'draft') return;
-  record.stage = 'applied';
-  record.stageChangedAt = Date.now();
-  record.updatedAt = Date.now();
-  await write(records);
+export function markSubmitted(id: string): Promise<void> {
+  return serialise(async () => {
+    const records = await listApplications();
+    const record = records.find((r) => r.id === id);
+    if (!record || record.stage !== 'draft') return;
+    record.stage = 'applied';
+    record.stageChangedAt = Date.now();
+    record.updatedAt = Date.now();
+    await write(records);
+  });
 }
 
-export async function setStage(id: string, stage: Stage): Promise<void> {
-  const records = await listApplications();
-  const record = records.find((r) => r.id === id);
-  if (!record || record.stage === stage) return;
-  record.stage = stage;
-  record.stageChangedAt = Date.now();
-  record.updatedAt = Date.now();
-  await write(records);
+export function setStage(id: string, stage: Stage): Promise<void> {
+  return serialise(async () => {
+    const records = await listApplications();
+    const record = records.find((r) => r.id === id);
+    if (!record || record.stage === stage) return;
+    record.stage = stage;
+    record.stageChangedAt = Date.now();
+    record.updatedAt = Date.now();
+    await write(records);
+  });
 }
 
 /**
@@ -157,31 +204,38 @@ export async function setStage(id: string, stage: Stage): Promise<void> {
  * way, so the user gets the final say. An empty string is a legitimate value —
  * it clears a wrong guess.
  */
-export async function updateApplication(
+export function updateApplication(
   id: string,
   patch: { company?: string; role?: string },
 ): Promise<void> {
-  const records = await listApplications();
-  const record = records.find((r) => r.id === id);
-  if (!record) return;
-  if (patch.company !== undefined) record.company = patch.company.trim();
-  if (patch.role !== undefined) record.role = patch.role.trim();
-  record.updatedAt = Date.now();
-  await write(records);
+  return serialise(async () => {
+    const records = await listApplications();
+    const record = records.find((r) => r.id === id);
+    if (!record) return;
+    if (patch.company !== undefined) record.company = patch.company.trim();
+    if (patch.role !== undefined) record.role = patch.role.trim();
+    record.editedByUser = true;
+    record.updatedAt = Date.now();
+    await write(records);
+  });
 }
 
-export async function updateNotes(id: string, notes: string): Promise<void> {
-  const records = await listApplications();
-  const record = records.find((r) => r.id === id);
-  if (!record) return;
-  record.notes = notes;
-  record.updatedAt = Date.now();
-  await write(records);
+export function updateNotes(id: string, notes: string): Promise<void> {
+  return serialise(async () => {
+    const records = await listApplications();
+    const record = records.find((r) => r.id === id);
+    if (!record) return;
+    record.notes = notes;
+    record.updatedAt = Date.now();
+    await write(records);
+  });
 }
 
-export async function deleteApplication(id: string): Promise<void> {
-  const records = await listApplications();
-  await write(records.filter((r) => r.id !== id));
+export function deleteApplication(id: string): Promise<void> {
+  return serialise(async () => {
+    const records = await listApplications();
+    await write(records.filter((r) => r.id !== id));
+  });
 }
 
 export async function clearApplications(): Promise<void> {
@@ -269,6 +323,9 @@ function migrate(value: unknown): ApplicationRecord | null {
     fieldsFilled: typeof raw.fieldsFilled === 'number' ? raw.fieldsFilled : 0,
     fieldsSkipped: typeof raw.fieldsSkipped === 'number' ? raw.fieldsSkipped : 0,
     notes: typeof raw.notes === 'string' ? raw.notes : '',
+    // Records written before corrections were tracked default to untouched: the
+    // stored company and role are whatever extraction produced.
+    editedByUser: raw.editedByUser === true,
   };
 }
 

@@ -10,7 +10,7 @@ import {
   type ApplicationRecord,
 } from '@/storage/applications';
 import { sendToTab, type FillSummary, type PageDescription } from '@/core/messages';
-import { requestAllSiteAccess } from '@/storage/permissions';
+import { hasAllSiteAccess, requestAllSiteAccess } from '@/storage/permissions';
 
 function must<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -140,7 +140,20 @@ async function refreshPageCard(): Promise<void> {
   // the six supported boards — exactly where "enable on this site" is meant to
   // help. Clicking the toolbar icon grants activeTab for that tab, which makes
   // the URL readable long enough to ask for the origin properly.
+  //
+  // Chrome redacts the URL of its own pages the same way, though, and no
+  // permission will ever reveal them. A user who has already granted every site
+  // and is looking at a redacted tab is therefore on chrome://something, where
+  // the grant button is not just useless but implies the grant did not work.
   if (!tab.url) {
+    if (await hasAllSiteAccess()) {
+      pill.textContent = 'No page';
+      pill.className = 'pill warn';
+      target.textContent =
+        'This is one of Chrome’s own pages, which no extension can read. Open a job ' +
+        'application to get started.';
+      return;
+    }
     pill.textContent = 'Needs access';
     pill.className = 'pill warn';
     target.textContent =
@@ -163,10 +176,18 @@ async function refreshPageCard(): Promise<void> {
   if (!description) {
     pill.textContent = 'Not running';
     pill.className = 'pill warn';
-    target.textContent =
-      'AutoApply runs automatically on Greenhouse, Lever, Ashby, Workable, SmartRecruiters ' +
-      'and Workday. On any other site you can turn it on for this domain, and it will use ' +
-      'its generic form handling.';
+    // With every site already granted the extension does run here — but only on
+    // pages opened since the grant, because Chrome does not inject into tabs
+    // that were already loaded. Telling that user to "turn it on for this
+    // domain" reads as though their grant failed.
+    const allSites = await hasAllSiteAccess();
+    target.textContent = allSites
+      ? 'AutoApply is allowed on this site but was not running when the page loaded. ' +
+        'Start it here, or reload the page.'
+      : 'AutoApply runs automatically on Greenhouse, Lever, Ashby, Workable, SmartRecruiters ' +
+        'and Workday. On any other site you can turn it on for this domain, and it will use ' +
+        'its generic form handling.';
+    enable.textContent = allSites ? 'Start AutoApply on this page' : 'Enable AutoApply on this site';
     // The generic adapter handles any ordinary form — it just needs permission
     // for this origin first, which only the user can grant.
     enable.hidden = false;

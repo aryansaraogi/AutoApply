@@ -107,20 +107,25 @@ async function runFill(): Promise<FillSummary> {
 
   const description = describePage();
 
-  const response = await sendToBackground<{ ok: boolean; id?: string }>({
-    type: 'RECORD_FILL',
-    event: {
-      company: description.company,
-      role: description.role,
-      url: description.url,
-      fieldsFilled: result.filled,
-      fieldsSkipped: result.skipped,
-    },
-  });
+  // A run against an empty profile fills nothing, so logging it would put a
+  // "0 filled" row in the tracker for an application that was never started.
+  // The overlay has already said what went wrong; the tracker stays clean.
+  if (!profileIsEmpty) {
+    const response = await sendToBackground<{ ok: boolean; id?: string }>({
+      type: 'RECORD_FILL',
+      event: {
+        company: description.company,
+        role: description.role,
+        url: description.url,
+        fieldsFilled: result.filled,
+        fieldsSkipped: result.skipped,
+      },
+    });
 
-  if (response?.id) {
-    recordId = response.id;
-    if (settings.trackSubmissions) watchForSubmit();
+    if (response?.id) {
+      recordId = response.id;
+      if (settings.trackSubmissions) watchForSubmit();
+    }
   }
 
   return {
@@ -181,33 +186,47 @@ function watchForSubmit(): void {
 
 // ── messaging ───────────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((message: ToContent, _sender, sendResponse) => {
-  // Staying silent in field-less frames means the sidepanel's single response
-  // comes from the frame that actually holds the application.
-  const hasFields = harvestPage().length > 0;
+/**
+ * Three routes can put this script into one frame: the manifest declaration, the
+ * all-sites registration the service worker manages, and the side panel's
+ * explicit injection when the user enables a single site. Two copies in a frame
+ * would both answer FILL_PAGE — filling the form twice and logging two records
+ * for one application — so the second copy stays quiet.
+ */
+const LOADED_FLAG = '__autoapplyContentLoaded';
+const scope = window as Window & { [LOADED_FLAG]?: true };
+const alreadyLoaded = scope[LOADED_FLAG] === true;
+scope[LOADED_FLAG] = true;
 
-  switch (message.type) {
-    case 'PING':
-      if (!hasFields) return false;
-      sendResponse({ ok: true });
-      return false;
+if (!alreadyLoaded) {
+  chrome.runtime.onMessage.addListener((message: ToContent, _sender, sendResponse) => {
+    // Staying silent in field-less frames means the sidepanel's single response
+    // comes from the frame that actually holds the application.
+    const hasFields = harvestPage().length > 0;
 
-    case 'DESCRIBE_PAGE':
-      if (!hasFields) return false;
-      sendResponse(describePage());
-      return false;
+    switch (message.type) {
+      case 'PING':
+        if (!hasFields) return false;
+        sendResponse({ ok: true });
+        return false;
 
-    case 'FILL_PAGE':
-      if (!hasFields) return false;
-      runFill()
-        .then(sendResponse)
-        .catch((error: unknown) => {
-          console.error('[AutoApply] fill failed', error);
-          sendResponse(null);
-        });
-      return true; // async response
+      case 'DESCRIBE_PAGE':
+        if (!hasFields) return false;
+        sendResponse(describePage());
+        return false;
 
-    default:
-      return false;
-  }
-});
+      case 'FILL_PAGE':
+        if (!hasFields) return false;
+        runFill()
+          .then(sendResponse)
+          .catch((error: unknown) => {
+            console.error('[AutoApply] fill failed', error);
+            sendResponse(null);
+          });
+        return true; // async response
+
+      default:
+        return false;
+    }
+  });
+}

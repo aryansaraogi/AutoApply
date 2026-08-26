@@ -15,6 +15,7 @@ import {
   recordFill,
   setStage,
   toCsv,
+  updateApplication,
   updateNotes,
 } from '@/storage/applications';
 
@@ -130,6 +131,88 @@ describe('notes and deletion', () => {
     const id = await recordFill(FILL);
     await deleteApplication(id);
     expect(await listApplications()).toHaveLength(0);
+  });
+});
+
+/**
+ * Every mutator reads the whole log and writes the whole log back, so two of
+ * them in flight at once used to overwrite each other: blurring a tracker row's
+ * role, company and notes in the same task kept only the last one. The symptom
+ * was a correction that silently reverted, which is the worst possible failure
+ * for a field whose entire purpose is fixing a bad guess.
+ */
+describe('concurrent edits to one record', () => {
+  it('keeps all three when role, company and notes are saved at once', async () => {
+    installStorage();
+    const id = await recordFill(FILL);
+
+    await Promise.all([
+      updateApplication(id, { role: 'Staff Engineer' }),
+      updateApplication(id, { company: 'Acme' }),
+      updateNotes(id, 'phone screen booked'),
+    ]);
+
+    const [record] = await listApplications();
+    expect(record?.role).toBe('Staff Engineer');
+    expect(record?.company).toBe('Acme');
+    expect(record?.notes).toBe('phone screen booked');
+  });
+
+  it('does not lose a stage change made while a note is saving', async () => {
+    installStorage();
+    const id = await recordFill(FILL);
+
+    await Promise.all([updateNotes(id, 'left a voicemail'), setStage(id, 'interview')]);
+
+    const [record] = await listApplications();
+    expect(record?.stage).toBe('interview');
+    expect(record?.notes).toBe('left a voicemail');
+  });
+
+  it('still applies a deletion queued behind an edit', async () => {
+    installStorage();
+    const id = await recordFill(FILL);
+
+    await Promise.all([updateApplication(id, { role: 'Staff Engineer' }), deleteApplication(id)]);
+
+    expect(await listApplications()).toHaveLength(0);
+  });
+});
+
+describe('a correction the user typed', () => {
+  it('survives the same posting being filled again', async () => {
+    installStorage();
+    const id = await recordFill(FILL);
+    await updateApplication(id, { role: 'Staff Engineer', company: 'Acme' });
+
+    // Within the dedupe window, so this refreshes the record rather than adding
+    // one — and would otherwise put the extension's own guess back.
+    await recordFill(FILL);
+
+    const [record] = await listApplications();
+    expect(record?.role).toBe('Staff Engineer');
+    expect(record?.company).toBe('Acme');
+    // The counts are the extension's to update, and still should be.
+    expect(record?.fieldsFilled).toBe(18);
+  });
+
+  it('leaves an untouched record free to improve on a second pass', async () => {
+    installStorage();
+    await recordFill({ ...FILL, company: '', role: '' });
+    await recordFill(FILL);
+
+    const [record] = await listApplications();
+    expect(record?.role).toBe('Platform Engineer');
+    expect(record?.company).toBe('Northwind Labs');
+  });
+
+  it('can clear a wrong guess to an empty string', async () => {
+    installStorage();
+    const id = await recordFill(FILL);
+    await updateApplication(id, { company: '' });
+    await recordFill(FILL);
+
+    expect((await listApplications())[0]?.company).toBe('');
   });
 });
 
