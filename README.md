@@ -145,12 +145,6 @@ server, no analytics. Everything lives in `chrome.storage.local` on your machine
 
 See [PRIVACY.md](PRIVACY.md).
 
-> An optional AI assist (bring-your-own API key, for questions the rules could not
-> map) was built and then pulled before v1.0.0: it had never been exercised against
-> a real key, and its host permission was missing so its first call would have
-> failed anyway. It can return once it is actually tested.
-
----
 
 ## Releasing
 
