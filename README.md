@@ -37,6 +37,21 @@ intercepts its own submit.
 That same button is how you use AutoApply on any site outside the supported list:
 it requests access to that one origin and starts the generic form handling there.
 
+### Or grant every site once
+
+Applying through company careers pages means a new origin almost every time, and
+Chrome will not even reveal a page's address until the extension has access to
+it — so the per-site button cannot always name the site it is offering to turn
+on. **Profile → Run on any site → Every site** grants `http(s)://*/*` in one
+prompt. AutoApply then registers itself on every page you open, and the per-site
+step disappears.
+
+It is entirely opt-in, never requested at install, and the same switch takes it
+back — revoking unregisters it everywhere outside the supported boards listed
+below. Chrome does not inject into tabs that are already open, so a page loaded
+before you granted access still needs one click; reload it and it runs on its
+own from then on.
+
 ---
 
 ## What it supports
@@ -79,7 +94,13 @@ would reject at submit time.
 
 Every fill creates a tracker entry automatically. **Open tracker** in the side
 panel opens the full view: search across company, role and notes; filter by
-stage; sort; edit notes inline; export CSV.
+stage; sort; export CSV.
+
+Company, role and notes are all editable in place. Company and role are *guesses*
+— careers pages are not built to be read by a machine, and a marketing headline
+or a routing segment in the URL can win over the real job title — so every
+guessed field is directly correctable, and a correction you type is never
+overwritten by a later fill of the same posting.
 
 ```
 Draft → Applied → Screening → Interview → Offer → Rejected / Withdrawn
@@ -152,7 +173,7 @@ out in [STORE-LISTING.md](STORE-LISTING.md).
 ```bash
 npm run build       # typecheck, build, verify every manifest reference resolves
 npm run watch       # rebuild both bundles on change
-npm test            # 200 unit + integration tests
+npm test            # 230 unit + integration tests
 npm run typecheck   # tsc for src/ and for the build config, separately
 npm run fixtures    # serve fixtures/ for manual testing
 npm run drive       # launch Chrome with the extension and fill the fixture
@@ -205,7 +226,9 @@ Two things it deliberately does *not* do, both learned the hard way:
 
 If the panel shows **Profile 0/39**, storage was cleared at some point — fill in
 the profile page, or re-run `npm run play`. A fill against an empty profile
-fills nothing, which looks like a broken extension but is not.
+reports `0 filled` and looks like a broken extension; the review overlay says
+which it is, and no tracker entry is written for an application that never
+actually got started.
 
 After a rebuild, press the reload button on the extension card in
 `chrome://extensions` — Chrome does not hot-reload unpacked extensions.
@@ -216,16 +239,28 @@ After a rebuild, press the reload button on the extension card in
 src/
   core/       harvest → label → match → fill.  No DOM writes outside setValue.
   adapters/   per-ATS quirks; the combobox driver lives here
-  ui/         options page, side panel, in-page review overlay
-  storage/    profile schema, settings, application log
-  ai/         optional assist: provider contract + Claude implementation
-  background/ service worker: message router, log writer, AI caller
+  ui/         options page, side panel, job tracker, in-page review overlay
+  storage/    profile schema, settings, résumés, application log, site access
+  background/ service worker: message router, and the content script
+              registration that follows your site-access choice
   content/    the only code that touches the page
 ```
 
 Two Vite builds, because MV3 content scripts cannot be ES modules: `vite.config.ts`
 produces the service worker and the two pages, `vite.content.config.ts` produces
 a single self-contained `content.js`.
+
+### How the content script gets there
+
+Three routes, which is why it guards against loading twice — two copies in one
+frame would both answer `FILL_PAGE`, filling the form twice and logging two
+records for one application:
+
+| Route | When |
+|---|---|
+| `content_scripts` in the manifest | The six declared boards, always |
+| `chrome.scripting.registerContentScripts` | Everywhere else, while all-site access is granted. The service worker registers and unregisters it as the permission changes, and excludes the declared hosts so no frame gets both |
+| `chrome.scripting.executeScript` | The side panel's per-site button, and for a page that was already open when access was granted — Chrome does not inject into tabs that have already loaded |
 
 ### How a fill works
 
@@ -245,7 +280,8 @@ Implement `SiteAdapter` (`src/adapters/types.ts`) and add it to the registry.
 An adapter may change *where* fields are looked for and *how* a widget is driven,
 but never *what value goes where* — that stays in the shared rule table so a fix
 benefits every site. Add the hostname to `host_permissions` and `content_scripts`
-in `public/manifest.json`.
+in `public/manifest.json` — the all-site registration reads those `matches` back
+out at runtime to exclude them, so there is nothing to keep in sync by hand.
 
 ---
 
@@ -265,4 +301,16 @@ in `public/manifest.json`.
 - **One frame answers per page.** Only the frame containing form fields responds,
   which is right for the embedded-iframe case but under-reports if a page somehow
   has application forms in two frames at once.
-- **No résumé file upload**, no LinkedIn Easy Apply, no cloud sync.
+- **A `chrome://` page is indistinguishable from a job page** until you have
+  granted every site. Chrome redacts the URL of both identically, so the side
+  panel offers to turn AutoApply on there too. Once every site is granted, a URL
+  Chrome still will not reveal can only be one of its own pages, and the panel
+  says so instead.
+- **Storage writes are serialised per context, not globally.** Every tracker edit
+  runs in the tracker page, so edits cannot overwrite each other. Two *different*
+  contexts writing in the same instant — a fill recording a record while you have
+  the tracker open — could still interleave, because `chrome.storage` offers no
+  compare-and-swap. They touch different records, and a company or role you typed
+  yourself is protected explicitly.
+- **No LinkedIn Easy Apply**, no cloud sync, no résumé *generation* — it attaches
+  the file you stored, it does not write one for you.
