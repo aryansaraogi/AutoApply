@@ -1,41 +1,91 @@
+/* The side panel.
+   Chrome lets the user drag this to roughly 300–700px, so everything here is
+   fluid; nothing assumes a width. */
+
 .panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  min-width: 300px;
+  min-width: 280px;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.brand-mark {
+  flex: none;
+  border-radius: 5px;
 }
 
 .panel-header h1 {
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 650;
 }
 
-.link-button {
-  padding: 2px 6px;
-  border: none;
-  background: none;
-  color: var(--accent);
+.small-button {
+  padding: 4px 9px;
   font-size: 12px;
-  font-weight: 600;
 }
 
-.link-button:hover {
-  text-decoration: underline;
+/* ── this page ───────────────────────────────────────────────────────────── */
+
+.page-card {
+  padding: 13px 14px;
 }
 
-.row.space-between {
+.page-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
 }
 
-.page-target {
-  margin: 8px 0 10px;
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-subtle);
+}
+
+/* The job this page is, given the most weight in the card — it is the one thing
+   worth checking before pressing Fill. */
+.page-role {
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
   overflow-wrap: anywhere;
+}
+
+.page-meta {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+/* Longer explanations — why the extension cannot run here, what a grant does. */
+.page-note {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.page-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .fill-button {
@@ -43,25 +93,161 @@
   padding: 9px;
 }
 
+.never-submits {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+
+/* Which parts of the card each state uses. A disabled primary button still
+   dominates a card, so the actions are shown rather than disabled — only the one
+   that can actually be pressed is in the DOM flow at any time. */
+.page-card #fill-button,
+.page-card #enable-button,
+.page-card #grant-button,
+.page-card .page-role,
+.page-card .page-meta,
+.page-card .page-note {
+  display: none;
+}
+
+.page-card[data-state='ready'] #fill-button,
+.page-card[data-state='filling'] #fill-button,
+.page-card[data-state='filled'] #fill-button {
+  display: block;
+}
+
+.page-card[data-state='not-running'] #enable-button {
+  display: block;
+}
+
+.page-card[data-state='needs-access'] #grant-button {
+  display: block;
+}
+
+.page-card[data-state='ready'] .page-role:not(:empty),
+.page-card[data-state='filling'] .page-role:not(:empty),
+.page-card[data-state='filled'] .page-role:not(:empty) {
+  display: block;
+}
+
+.page-card[data-state='ready'] .page-meta,
+.page-card[data-state='filling'] .page-meta,
+.page-card[data-state='filled'] .page-meta {
+  display: block;
+}
+
+.page-card[data-state='no-page'] .page-note,
+.page-card[data-state='not-running'] .page-note,
+.page-card[data-state='needs-access'] .page-note,
+.page-card[data-state='empty-form'] .page-note {
+  display: block;
+}
+
+.page-card[data-state='ready'] .page-actions,
+.page-card[data-state='filling'] .page-actions,
+.page-card[data-state='filled'] .page-actions,
+.page-card[data-state='not-running'] .page-actions,
+.page-card[data-state='needs-access'] .page-actions {
+  margin-top: 11px;
+}
+
+/* ── fill result ─────────────────────────────────────────────────────────── */
+
 .fill-result {
-  margin: 8px 0;
-  min-height: 1em;
+  margin-top: 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
 }
 
 .fill-result.ok {
-  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+  background: var(--ok-bg);
 }
 
 .fill-result.warn {
-  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 35%, var(--border));
+  background: var(--warn-bg);
 }
 
 .fill-result.error {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: var(--danger-bg);
+}
+
+.result-headline {
+  font-size: 13px;
+  font-weight: 640;
+}
+
+.fill-result.ok .result-headline {
+  color: var(--ok);
+}
+
+.fill-result.warn .result-headline {
+  color: var(--warn);
+}
+
+.fill-result.error .result-headline {
   color: var(--danger);
 }
 
-#profile-hint {
-  margin-top: 6px;
+.result-detail {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* ── profile strip ───────────────────────────────────────────────────────── */
+
+/* A single row while the profile is in good shape, so it costs almost no height;
+   it only earns a hint line when something is actually missing. */
+.profile-button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: var(--radius);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg-raised);
+  font-weight: inherit;
+}
+
+.profile-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.profile-label {
+  font-size: 12px;
+  font-weight: 640;
+  letter-spacing: -0.005em;
+}
+
+.profile-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.profile-hint {
+  display: block;
+  margin-top: 7px;
+  line-height: 1.45;
+}
+
+.profile-hint:empty {
+  display: none;
 }
 
 /* ── history ─────────────────────────────────────────────────────────────── */
@@ -70,9 +256,12 @@
   margin-bottom: 8px;
 }
 
-.small-button {
-  padding: 3px 8px;
-  font-size: 12px;
+.history-head h2 {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .history-list {
@@ -81,34 +270,68 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .history-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2px 8px;
-  padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-raised);
+  transition:
+    border-color var(--ease),
+    background var(--ease);
 }
 
-.history-role {
-  font-weight: 600;
-  overflow-wrap: anywhere;
+.history-item:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
 }
 
-.history-meta {
-  grid-column: 1 / -1;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.history-item a {
+/* The whole row is the link, so the target is the row rather than the words. */
+.history-link {
+  display: block;
+  padding: 9px 11px;
+  color: inherit;
   text-decoration: none;
 }
 
-.history-item a:hover {
+.history-role {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.history-item:hover .history-role {
   text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.history-company {
+  overflow-wrap: anywhere;
+}
+
+/* Separators between company, stage and age. Generated rather than written into
+   the DOM so assistive tech reads the three facts, not the punctuation between
+   them. */
+.history-meta > * + *::before {
+  content: '·';
+  margin-right: 7px;
+  color: var(--text-subtle);
+}
+
+/* Closed applications stay listed but stop competing for attention. */
+.history-item.closed .history-role,
+.history-item.closed .history-meta {
+  opacity: 0.62;
 }

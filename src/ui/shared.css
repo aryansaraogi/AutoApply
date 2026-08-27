@@ -3,7 +3,11 @@
 
    The accent is indigo rather than blue on purpose: the tracker's stage colours
    already use blue for "Applied", and a selected stage chip draws the accent as
-   its background. With a blue accent, a selected Applied chip was blue-on-blue. */
+   its background. With a blue accent, a selected Applied chip was blue-on-blue.
+
+   Everything here is self-hosted. The extension makes no network requests of any
+   kind (see PRIVACY.md), so there are no web fonts and no remote assets — the
+   type stack is the system UI font on every platform. */
 
 :root {
   color-scheme: light dark;
@@ -19,7 +23,11 @@
 
   --text: #14161d;
   --text-muted: #5b6373;
-  --text-subtle: #858c9c;
+  /* The lightest text tone that still clears WCAG AA (4.5:1) against every
+     surface above, --bg-hover included — the old value was 3.0:1 there, which
+     made the small uppercase labels and the placeholder text genuinely hard to
+     read. Anything quieter than this is a border or a dot, not text. */
+  --text-subtle: #666e7c;
 
   --accent: #4f46e5;
   --accent-hover: #4338ca;
@@ -33,6 +41,18 @@
   --danger: #b02a20;
   --danger-bg: #fdeceb;
 
+  /* Pipeline stages. One definition, used by the tracker's dots and chips and by
+     the side panel's history — so a stage looks the same everywhere it appears.
+     Each is chosen to stay distinct from the indigo accent, since a selected
+     filter chip paints the accent behind its own dot. */
+  --stage-draft: #94a3b8;
+  --stage-applied: #2563eb;
+  --stage-screening: #0891b2;
+  --stage-interview: #d97706;
+  --stage-offer: #16a34a;
+  --stage-rejected: #dc2626;
+  --stage-withdrawn: #64748b;
+
   --radius-sm: 6px;
   --radius: 9px;
   --radius-lg: 12px;
@@ -40,6 +60,13 @@
   --shadow-sm: 0 1px 2px rgb(18 22 32 / 6%);
   --shadow: 0 1px 2px rgb(18 22 32 / 6%), 0 6px 16px -4px rgb(18 22 32 / 10%);
   --shadow-lg: 0 2px 4px rgb(18 22 32 / 8%), 0 12px 32px -8px rgb(18 22 32 / 16%);
+
+  --font:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* One duration for every state change, so the whole surface feels like one
+     thing. Zeroed under prefers-reduced-motion below. */
+  --ease: 120ms ease;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,7 +83,7 @@
 
     --text: #e9ebf0;
     --text-muted: #98a1b2;
-    --text-subtle: #6f7889;
+    --text-subtle: #87909f;
 
     --accent: #8b87f5;
     --accent-hover: #a5a1f8;
@@ -70,9 +97,37 @@
     --danger: #f08a80;
     --danger-bg: #331715;
 
+    /* Lifted for contrast against the dark surfaces; the hues are unchanged so a
+       stage stays recognisably the same colour between themes. */
+    --stage-draft: #94a3b8;
+    --stage-applied: #60a5fa;
+    --stage-screening: #22d3ee;
+    --stage-interview: #fbbf24;
+    --stage-offer: #4ade80;
+    --stage-rejected: #f87171;
+    --stage-withdrawn: #94a3b8;
+
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 45%);
     --shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 6px 16px -4px rgb(0 0 0 / 45%);
     --shadow-lg: 0 2px 4px rgb(0 0 0 / 50%), 0 12px 32px -8px rgb(0 0 0 / 55%);
+  }
+}
+
+/* Animation is decoration here — nothing in this UI conveys meaning through
+   motion — so honouring the OS setting costs nothing and stops the interface
+   from making anyone unwell. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease: 0s;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -80,16 +135,22 @@
   box-sizing: border-box;
 }
 
+/* The `hidden` attribute has to beat every layout rule below.
+   The browser's own `[hidden] { display: none }` is a UA-stylesheet rule, so any
+   class here that sets `display` outranks it on specificity — which meant
+   `element.hidden = true` silently did nothing to the empty states (they set
+   `display: flex`), and the side panel showed "No applications yet" underneath a
+   list of applications. Anything toggled by `hidden` anywhere is covered by
+   this one rule rather than each layout rule having to remember. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font:
-    14px/1.55 ui-sans-serif,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  font: 14px/1.55 var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -124,6 +185,24 @@ a {
   font-size: 12px;
 }
 
+/* Numbers that change in place — counts, dates, sizes — must not make the layout
+   twitch as they update. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── form controls ───────────────────────────────────────────────────────── */
 
 label {
@@ -140,6 +219,7 @@ input[type='tel'],
 input[type='url'],
 input[type='date'],
 input[type='password'],
+input[type='search'],
 select,
 textarea {
   width: 100%;
@@ -150,8 +230,8 @@ textarea {
   color: var(--text);
   font: inherit;
   transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease;
+    border-color var(--ease),
+    box-shadow var(--ease);
 }
 
 input::placeholder,
@@ -169,7 +249,8 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 button:focus-visible,
-a:focus-visible {
+a:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -191,6 +272,12 @@ textarea {
   line-height: 1.5;
 }
 
+/* Native selects paint their own arrow at the far right; without the extra
+   padding a long option label runs underneath it. */
+select {
+  padding-right: 26px;
+}
+
 button {
   padding: 8px 13px;
   border: 1px solid var(--border-strong);
@@ -202,9 +289,9 @@ button {
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition:
-    background 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background var(--ease),
+    border-color var(--ease),
+    color var(--ease);
 }
 
 button:hover:not(:disabled) {
@@ -243,12 +330,31 @@ button.danger:hover:not(:disabled) {
   border-color: var(--danger);
 }
 
+/* Borderless button for secondary actions that would otherwise crowd a row with
+   boxes — "Profile", "Open", the tracker's row actions. */
+button.ghost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: transparent;
+  color: var(--text);
+}
+
 /* ── layout primitives ───────────────────────────────────────────────────── */
 
 .row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.row.space-between {
+  justify-content: space-between;
 }
 
 .card {
@@ -268,6 +374,7 @@ button.danger:hover:not(:disabled) {
   letter-spacing: 0.02em;
   background: var(--bg-sunken);
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .pill.ok {
@@ -278,4 +385,92 @@ button.danger:hover:not(:disabled) {
 .pill.warn {
   background: var(--warn-bg);
   color: var(--warn);
+}
+
+.pill.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ── stage marker ────────────────────────────────────────────────────────── */
+
+/* A stage is always drawn the same way: a coloured dot and its name. The colour
+   comes from --stage-<name>, set as an inline custom property by whichever view
+   is rendering it, so there is no per-stage CSS class to keep in sync with the
+   Stage union in storage/applications.ts. */
+.stage-dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--dot, var(--text-subtle));
+}
+
+.stage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 640;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── progress meter ──────────────────────────────────────────────────────── */
+
+/* Used for profile completeness in both the side panel and the options header.
+   A plain <progress> is styled inconsistently across platforms and cannot take a
+   colour that responds to how full it is, so it is two divs. */
+/* display:block is load-bearing, not tidiness — both meters are <span>s (one
+   lives inside a button, where a <div> would be invalid), and an inline box
+   ignores height, so without this the bar renders at zero height and the whole
+   control is invisible. */
+.meter {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition:
+    width 260ms ease,
+    background var(--ease);
+}
+
+.meter-fill.low {
+  background: var(--warn);
+}
+
+.meter-fill.done {
+  background: var(--ok);
+}
+
+/* ── empty states ────────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 34px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-state p {
+  max-width: 46ch;
 }

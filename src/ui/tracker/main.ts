@@ -15,25 +15,17 @@ import {
   type ApplicationRecord,
   type Stage,
 } from '@/storage/applications';
+import { debounce, el, must } from '../dom';
+import {
+  STALE_AFTER_DAYS,
+  daysSince,
+  formatDate,
+  formatExact,
+  formatStageAge,
+} from '../format';
+import { stageDot } from '../stages';
 
-type SortKey = 'updated' | 'created' | 'company' | 'stage';
-
-/**
- * Colours the stage dot: cool and neutral while nothing has happened, warming
- * as an application progresses, muted once it is closed.
- *
- * Each is chosen to stay distinct from the indigo accent, since a selected
- * filter chip paints the accent behind its own dot.
- */
-const STAGE_COLOURS: Record<Stage, string> = {
-  draft: '#94a3b8',
-  applied: '#2563eb',
-  screening: '#0891b2',
-  interview: '#d97706',
-  offer: '#16a34a',
-  rejected: '#dc2626',
-  withdrawn: '#64748b',
-};
+type SortKey = 'updated' | 'created' | 'stalest' | 'company' | 'stage';
 
 const NOTES_DEBOUNCE_MS = 500;
 
@@ -41,30 +33,6 @@ let records: ApplicationRecord[] = [];
 let stageFilter: Stage | 'all' = 'all';
 let search = '';
 let sortKey: SortKey = 'updated';
-
-function must<T extends HTMLElement>(id: string): T {
-  const node = document.getElementById(id);
-  if (!node) throw new Error(`Missing element #${id}`);
-  return node as T;
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<HTMLElementTagNameMap[K]> = {},
-  children: (Node | string)[] = [],
-): HTMLElementTagNameMap[K] {
-  const node = Object.assign(document.createElement(tag), props);
-  for (const child of children) node.append(child);
-  return node;
-}
-
-function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number) {
-  let timer = 0;
-  return (...args: T) => {
-    clearTimeout(timer);
-    timer = window.setTimeout(() => fn(...args), ms);
-  };
-}
 
 // ── filtering and sorting ───────────────────────────────────────────────────
 
@@ -87,6 +55,12 @@ function comparator(a: ApplicationRecord, b: ApplicationRecord): number {
   switch (sortKey) {
     case 'created':
       return b.createdAt - a.createdAt;
+    case 'stalest':
+      // Closed applications are not stale, they are finished — they sort last
+      // however long ago they closed.
+      return (
+        Number(isClosed(a)) - Number(isClosed(b)) || a.stageChangedAt - b.stageChangedAt
+      );
     case 'company':
       return (a.company || a.host).localeCompare(b.company || b.host);
     case 'stage':
@@ -97,6 +71,15 @@ function comparator(a: ApplicationRecord, b: ApplicationRecord): number {
   }
 }
 
+function isClosed(record: ApplicationRecord): boolean {
+  return CLOSED_STAGES.includes(record.stage);
+}
+
+/** An open application that has not moved for weeks is worth flagging. */
+function isStale(record: ApplicationRecord): boolean {
+  return !isClosed(record) && daysSince(record.stageChangedAt) >= STALE_AFTER_DAYS;
+}
+
 // ── rendering ───────────────────────────────────────────────────────────────
 
 function renderStageFilter(): void {
@@ -104,13 +87,12 @@ function renderStageFilter(): void {
   const counts = countByStage(records);
 
   const chip = (key: Stage | 'all', label: string, count: number) => {
-    const button = el('button', { type: 'button', className: 'stage-chip' });
+    const button = el('button', {
+      type: 'button',
+      className: `stage-chip${count === 0 && key !== 'all' ? ' is-empty' : ''}`,
+    });
     button.setAttribute('aria-pressed', String(stageFilter === key));
-    if (key !== 'all') {
-      const dot = el('span', { className: 'stage-dot' });
-      dot.style.background = STAGE_COLOURS[key];
-      button.append(dot);
-    }
+    if (key !== 'all') button.append(stageDot(key));
     button.append(label, el('span', { className: 'count', textContent: String(count) }));
     button.addEventListener('click', () => {
       stageFilter = stageFilter === key ? 'all' : key;
@@ -125,7 +107,10 @@ function renderStageFilter(): void {
   );
 }
 
-function stageSelect(record: ApplicationRecord): HTMLSelectElement {
+function stageSelect(record: ApplicationRecord): HTMLElement {
+  const wrapper = el('div', { className: 'stage-cell' });
+  wrapper.append(stageDot(record.stage));
+
   const select = el('select', { ariaLabel: `Stage for ${record.role || record.company}` });
   for (const stage of STAGES) {
     select.append(el('option', { value: stage, textContent: STAGE_LABELS[stage] }));
@@ -135,7 +120,9 @@ function stageSelect(record: ApplicationRecord): HTMLSelectElement {
     await setStage(record.id, select.value as Stage);
     await refresh();
   });
-  return select;
+
+  wrapper.append(select);
+  return wrapper;
 }
 
 /**
@@ -176,18 +163,22 @@ function editableCell(options: {
   return input;
 }
 
-function row(record: ApplicationRecord): HTMLTableRowElement {
-  const tr = el('tr', {
-    className: CLOSED_STAGES.includes(record.stage) ? 'closed' : '',
-  });
+/** `data-label` is what the narrow card layout draws above each value. */
+function cell(className: string, label?: string): HTMLTableCellElement {
+  const td = el('td', { className });
+  if (label) td.dataset.label = label;
+  return td;
+}
 
-  const roleCell = el('td', { className: 'col-role' });
+function row(record: ApplicationRecord): HTMLTableRowElement {
+  const tr = el('tr', { className: isClosed(record) ? 'closed' : '' });
+
+  const roleCell = cell('col-role');
   roleCell.append(
     editableCell({
       value: record.role,
       placeholder: 'Add a role…',
       label: `Role at ${record.company || record.host}`,
-      className: 'cell-strong',
       save: (value) => updateApplication(record.id, { role: value }),
       commit: (value) => {
         record.role = value;
@@ -195,7 +186,7 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
     }),
   );
 
-  const companyCell = el('td', { className: 'col-company' });
+  const companyCell = cell('col-company', 'Company');
   companyCell.append(
     editableCell({
       value: record.company,
@@ -210,16 +201,24 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
     }),
   );
 
-  const stageCell = el('td', { className: 'col-stage' });
+  const stageCell = cell('col-stage', 'Stage');
   stageCell.append(stageSelect(record));
 
-  const appliedCell = el('td', {
-    className: 'col-applied',
-    title: new Date(record.createdAt).toLocaleString(),
-    textContent: formatDate(record.createdAt),
-  });
+  const appliedCell = cell('col-applied', 'Applied');
+  appliedCell.title = formatExact(record.createdAt);
+  appliedCell.textContent = formatDate(record.createdAt);
 
-  const notesCell = el('td', { className: 'col-notes' });
+  // How long it has sat where it is. Closed records show a dash: "3 weeks since
+  // rejected" is not something anyone needs to act on.
+  const ageCell = cell(`col-age${isStale(record) ? ' stale' : ''}`, 'In stage');
+  if (isClosed(record)) {
+    ageCell.textContent = '—';
+  } else {
+    ageCell.textContent = formatStageAge(record.stageChangedAt);
+    ageCell.title = `In ${STAGE_LABELS[record.stage]} since ${formatExact(record.stageChangedAt)}`;
+  }
+
+  const notesCell = cell('col-notes', 'Notes');
   notesCell.append(
     editableCell({
       value: record.notes,
@@ -232,8 +231,9 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
     }),
   );
 
-  const actionsCell = el('td', { className: 'col-actions' });
-  actionsCell.append(
+  const actionsCell = cell('col-actions');
+  const actions = el('div', { className: 'actions' });
+  actions.append(
     el('a', {
       className: 'open-link',
       href: record.url,
@@ -245,7 +245,7 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
   );
   const remove = el('button', {
     type: 'button',
-    className: 'icon-button',
+    className: 'ghost icon-button',
     textContent: 'Delete',
   });
   remove.addEventListener('click', async () => {
@@ -254,9 +254,10 @@ function row(record: ApplicationRecord): HTMLTableRowElement {
     await deleteApplication(record.id);
     await refresh();
   });
-  actionsCell.append(remove);
+  actions.append(remove);
+  actionsCell.append(actions);
 
-  tr.append(roleCell, companyCell, stageCell, appliedCell, notesCell, actionsCell);
+  tr.append(roleCell, companyCell, stageCell, appliedCell, ageCell, notesCell, actionsCell);
   return tr;
 }
 
@@ -266,30 +267,44 @@ function render(): void {
   const shown = visible();
   must<HTMLTableSectionElement>('rows').replaceChildren(...shown.map(row));
 
-  const counts = countByStage(records);
-  const live = records.length - counts.rejected - counts.withdrawn;
-  must<HTMLElement>('summary').textContent =
-    records.length === 0
-      ? 'Nothing tracked yet.'
-      : `${records.length} application${records.length === 1 ? '' : 's'} · ${live} still open`;
+  renderSummary();
 
-  const empty = must<HTMLElement>('empty');
-  const grid = must<HTMLElement>('grid');
   const nothingToShow = shown.length === 0;
-  grid.hidden = nothingToShow;
-  empty.hidden = !nothingToShow;
-  empty.textContent =
-    records.length === 0
-      ? 'Fill an application and it will appear here automatically.'
-      : 'No applications match those filters.';
+  must<HTMLElement>('grid-scroll').hidden = nothingToShow;
+  must<HTMLElement>('empty').hidden = !nothingToShow;
+
+  if (nothingToShow) {
+    const blank = records.length === 0;
+    must<HTMLElement>('empty-title').textContent = blank
+      ? 'Nothing tracked yet'
+      : 'No applications match those filters';
+    must<HTMLElement>('empty-detail').textContent = blank
+      ? 'Fill an application with AutoApply and it will appear here automatically.'
+      : 'Clear the search box, or pick a different stage above.';
+  }
 }
 
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+/**
+ * The one-line state of the pipeline. "Still open" is the number worth watching;
+ * the stale count is the number worth acting on.
+ */
+function renderSummary(): void {
+  const summary = must<HTMLElement>('summary');
+
+  if (records.length === 0) {
+    summary.textContent = 'Nothing tracked yet.';
+    return;
+  }
+
+  const open = records.filter((record) => !isClosed(record)).length;
+  const stale = records.filter(isStale).length;
+
+  const parts = [
+    `${records.length} application${records.length === 1 ? '' : 's'}`,
+    `${open} still open`,
+  ];
+  if (stale > 0) parts.push(`${stale} with no movement in ${STALE_AFTER_DAYS}+ days`);
+  summary.textContent = parts.join(' · ');
 }
 
 async function refresh(): Promise<void> {
@@ -300,16 +315,25 @@ async function refresh(): Promise<void> {
 // ── boot ────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  must<HTMLInputElement>('search').addEventListener(
+  const searchInput = must<HTMLInputElement>('search');
+  searchInput.addEventListener(
     'input',
-    debounce(function (this: void) {
-      search = must<HTMLInputElement>('search').value;
+    debounce(() => {
+      search = searchInput.value;
       render();
     }, 150),
   );
+  // type=search fires input on the native clear button too, but Escape does not.
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || searchInput.value === '') return;
+    searchInput.value = '';
+    search = '';
+    render();
+  });
 
-  must<HTMLSelectElement>('sort').addEventListener('change', () => {
-    sortKey = must<HTMLSelectElement>('sort').value as SortKey;
+  const sort = must<HTMLSelectElement>('sort');
+  sort.addEventListener('change', () => {
+    sortKey = sort.value as SortKey;
     render();
   });
 
@@ -321,7 +345,10 @@ async function main(): Promise<void> {
     if (records.length === 0) return;
     const blob = new Blob([toCsv(visible())], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = el('a', { href: url, download: `autoapply-${new Date().toISOString().slice(0, 10)}.csv` });
+    const link = el('a', {
+      href: url,
+      download: `autoapply-${new Date().toISOString().slice(0, 10)}.csv`,
+    });
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   });

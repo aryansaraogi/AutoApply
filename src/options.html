@@ -6,15 +6,25 @@
     <title>AutoApply — Profile</title>
   </head>
   <body class="options">
-    <header class="options-header">
-      <div>
-        <h1>AutoApply profile</h1>
-        <p class="muted small">
-          Stored only on this computer. Nothing is uploaded anywhere.
-        </p>
-      </div>
-      <div class="row">
-        <span id="save-status" class="small muted" role="status" aria-live="polite"></span>
+    <header class="options-header" id="options-header">
+      <div class="options-header-inner">
+        <div class="options-title">
+          <div class="brand">
+            <img src="icons/icon-32.png" alt="" width="22" height="22" class="brand-mark" />
+            <h1>AutoApply profile</h1>
+          </div>
+          <p class="muted small">Stored only on this computer. Nothing is uploaded anywhere.</p>
+        </div>
+
+        <div class="header-status">
+          <span id="save-status" class="save-status small" role="status" aria-live="polite"></span>
+          <div class="completeness">
+            <span class="completeness-line">
+              <span id="completeness-count" class="small tabular">—</span>
+            </span>
+            <span class="meter"><span id="completeness-meter" class="meter-fill"></span></span>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -32,19 +42,30 @@
             PDF, DOCX, DOC, RTF and TXT are accepted.
           </p>
 
-          <div class="resume-add">
+          <!-- The input is the real control and stays keyboard-reachable through
+               its label; the drop zone is the same target made large enough to
+               drag a file onto. -->
+          <label class="dropzone" id="resume-drop" for="resume-file">
             <input
               type="file"
               id="resume-file"
+              class="sr-only"
               accept=".pdf,.docx,.doc,.rtf,.txt"
-              aria-label="Choose a résumé file"
             />
-            <button type="button" id="resume-add" class="primary">Add résumé</button>
+            <span class="dropzone-icon" aria-hidden="true">📄</span>
+            <span class="dropzone-text">
+              <span class="dropzone-title" id="resume-filename">Choose a résumé, or drop one here</span>
+              <span class="muted small">PDF, DOCX, DOC, RTF or TXT · up to 8 MB</span>
+            </span>
+          </label>
+
+          <div class="row resume-add">
+            <button type="button" id="resume-add" class="primary" disabled>Add résumé</button>
+            <p id="resume-error" class="small resume-error" role="alert"></p>
           </div>
-          <p id="resume-error" class="small resume-error" role="alert"></p>
 
           <ul id="resume-list" class="resume-list"></ul>
-          <p id="resume-empty" class="muted small">
+          <p id="resume-empty" class="muted small resume-empty">
             No résumé saved. Résumé uploads will be left for you to attach by hand.
           </p>
         </section>

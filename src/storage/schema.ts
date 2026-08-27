@@ -318,3 +318,10 @@ export function fieldSpec(key: ProfileKey): ProfileFieldSpec {
 export function filledCount(profile: Profile): number {
   return PROFILE_KEYS.filter((k) => profile[k].trim() !== '').length;
 }
+
+/**
+ * Below this a profile cannot answer most of an ordinary application, and both
+ * the side panel and the profile editor say so. Roughly the identity, contact
+ * and address fields — the ones every form asks for before anything else.
+ */
+export const USABLE_FIELD_COUNT = 12;

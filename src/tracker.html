@@ -7,8 +7,11 @@
   </head>
   <body class="tracker">
     <header class="tracker-header">
-      <div>
-        <h1>Job tracker</h1>
+      <div class="tracker-title">
+        <div class="brand">
+          <img src="icons/icon-32.png" alt="" width="22" height="22" class="brand-mark" />
+          <h1>Job tracker</h1>
+        </div>
         <p class="muted small" id="summary">—</p>
       </div>
       <div class="row">
@@ -18,18 +21,25 @@
     </header>
 
     <section class="controls">
-      <input
-        type="text"
-        id="search"
-        placeholder="Search company, role, notes…"
-        autocomplete="off"
-        aria-label="Search applications"
-      />
+      <div class="search-field">
+        <svg class="search-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        <input
+          type="search"
+          id="search"
+          placeholder="Search company, role, notes…"
+          autocomplete="off"
+          aria-label="Search applications"
+        />
+      </div>
       <label class="sort-field" for="sort">
         Sort
         <select id="sort">
           <option value="updated">Recently updated</option>
           <option value="created">Date applied</option>
+          <option value="stalest">Longest in stage</option>
           <option value="company">Company</option>
           <option value="stage">Stage</option>
         </select>
@@ -38,21 +48,31 @@
 
     <nav class="stage-filter" id="stage-filter" aria-label="Filter by stage"></nav>
 
-    <table class="grid" id="grid">
-      <thead>
-        <tr>
-          <th scope="col">Role</th>
-          <th scope="col">Company</th>
-          <th scope="col">Stage</th>
-          <th scope="col">Applied</th>
-          <th scope="col">Notes</th>
-          <th scope="col"><span class="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <!-- The table is wider than a narrow window can show. It scrolls inside this
+         container so the page body itself never scrolls sideways; under the
+         card breakpoint in tracker.css the rows reflow and this stops
+         scrolling at all. -->
+    <div class="grid-scroll" id="grid-scroll">
+      <table class="grid" id="grid">
+        <thead>
+          <tr>
+            <th scope="col">Role</th>
+            <th scope="col">Company</th>
+            <th scope="col">Stage</th>
+            <th scope="col">Applied</th>
+            <th scope="col" class="col-age-head">In stage</th>
+            <th scope="col">Notes</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
 
-    <p id="empty" class="empty muted"></p>
+    <div id="empty" class="empty-state" hidden>
+      <p class="empty-title" id="empty-title"></p>
+      <p class="small" id="empty-detail"></p>
+    </div>
 
     <script type="module" src="./ui/tracker/main.ts"></script>
   </body>

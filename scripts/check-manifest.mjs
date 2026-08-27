@@ -1,9 +1,14 @@
 /**
- * Verifies that every file manifest.json points at actually exists in dist/.
+ * Verifies the built manifest before it is packaged.
  *
- * Chrome reports a missing service worker or content script as a generic load
- * failure, which is a slow thing to debug by hand. This catches it in one second
- * at build time instead.
+ * Two classes of problem, both of which are slow to diagnose anywhere else:
+ *
+ * 1. A file the manifest points at is missing. Chrome reports that as a generic
+ *    load failure.
+ * 2. A field is longer than the Chrome Web Store allows. The store does not tell
+ *    you until you have already built a zip and dragged it into the dashboard,
+ *    and the limits are not enforced by Chrome when loading unpacked — so an
+ *    over-length description works perfectly right up until upload day.
  */
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -49,4 +54,35 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(`✓ manifest ok — ${referenced.length} referenced files present in dist/`);
+/**
+ * Chrome Web Store field limits. Counted in code points rather than UTF-16 units
+ * so an em dash or an accented character costs what the store thinks it costs.
+ * @type {{ field: string, value: unknown, max: number }[]}
+ */
+const limits = [
+  { field: 'name', value: manifest.name, max: 45 },
+  { field: 'description', value: manifest.description, max: 132 },
+  { field: 'version', value: manifest.version, max: 20 },
+];
+
+/** @type {string[]} */
+const overlong = [];
+for (const { field, value, max } of limits) {
+  if (typeof value !== 'string') continue;
+  const length = [...value].length;
+  if (length > max) {
+    overlong.push(`    ${field}: ${length} characters, limit ${max} (over by ${length - max})`);
+  }
+}
+
+if (overlong.length > 0) {
+  console.error('✗ manifest fields exceed the Chrome Web Store limits:');
+  for (const line of overlong) console.error(line);
+  console.error('  The store rejects the upload for these; Chrome does not.');
+  process.exit(1);
+}
+
+console.log(
+  `✓ manifest ok — ${referenced.length} referenced files present, ` +
+    `${limits.length} length limits respected`,
+);

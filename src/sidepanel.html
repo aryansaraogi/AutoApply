@@ -7,46 +7,64 @@
   </head>
   <body class="panel">
     <header class="panel-header">
-      <h1>AutoApply</h1>
-      <button type="button" id="open-options" class="link-button">Profile</button>
+      <div class="brand">
+        <img src="icons/icon-32.png" alt="" width="20" height="20" class="brand-mark" />
+        <h1>AutoApply</h1>
+      </div>
+      <button type="button" id="open-options" class="ghost small-button">Profile</button>
     </header>
 
-    <section class="card" id="page-card">
-      <div class="row space-between">
-        <h2>This page</h2>
-        <span id="adapter-pill" class="pill warn">Checking…</span>
+    <!-- data-state drives which of the actions and messages below are shown.
+         See refreshPageCard() in ui/sidepanel/main.ts for the state list. -->
+    <section class="card page-card" id="page-card" data-state="checking">
+      <div class="page-head">
+        <span class="eyebrow">This page</span>
+        <span id="adapter-pill" class="pill">Checking…</span>
       </div>
-      <p id="page-target" class="muted small page-target">—</p>
-      <button type="button" id="fill-button" class="primary fill-button" disabled>
-        Fill this page
-      </button>
-      <button type="button" id="enable-button" class="fill-button" hidden>
-        Enable AutoApply on this site
-      </button>
-      <button type="button" id="grant-button" class="primary fill-button" hidden>
-        Allow AutoApply on every site
-      </button>
-      <p id="fill-result" class="small fill-result" role="status" aria-live="polite"></p>
-      <p class="muted small">AutoApply never submits a form. You review, then submit.</p>
+
+      <p id="page-role" class="page-role"></p>
+      <p id="page-meta" class="muted small page-meta"></p>
+      <p id="page-note" class="muted small page-note"></p>
+
+      <div class="page-actions">
+        <button type="button" id="fill-button" class="primary fill-button">Fill this page</button>
+        <button type="button" id="enable-button" class="fill-button">
+          Enable AutoApply on this site
+        </button>
+        <button type="button" id="grant-button" class="primary fill-button">
+          Allow AutoApply on every site
+        </button>
+      </div>
+
+      <!-- The result of the last fill. Hidden until there has been one. -->
+      <div id="fill-result" class="fill-result" role="status" aria-live="polite" hidden></div>
+
+      <p class="muted small never-submits">
+        <span aria-hidden="true">🔒</span> AutoApply never submits a form. You review, then submit.
+      </p>
     </section>
 
-    <section class="card" id="profile-card">
-      <div class="row space-between">
-        <h2>Profile</h2>
-        <span id="profile-pill" class="pill">—</span>
-      </div>
-      <p id="profile-hint" class="muted small"></p>
+    <section class="profile-strip" id="profile-strip">
+      <button type="button" id="profile-open" class="profile-button">
+        <span class="profile-line">
+          <span class="profile-label">Profile</span>
+          <span id="profile-count" class="profile-count tabular">—</span>
+        </span>
+        <span class="meter"><span id="profile-meter" class="meter-fill"></span></span>
+        <span id="profile-hint" class="muted small profile-hint"></span>
+      </button>
     </section>
 
     <section class="history">
       <div class="row space-between history-head">
         <h2>Recent</h2>
-        <button type="button" id="open-tracker" class="small-button">Open tracker</button>
+        <button type="button" id="open-tracker" class="ghost small-button">Open tracker</button>
       </div>
       <ul id="history-list" class="history-list"></ul>
-      <p id="history-empty" class="muted small">
-        Applications you fill will be listed here.
-      </p>
+      <div id="history-empty" class="empty-state" hidden>
+        <p class="empty-title">No applications yet</p>
+        <p class="small">Fill an application and it will be listed here automatically.</p>
+      </div>
     </section>
 
     <script type="module" src="./ui/sidepanel/main.ts"></script>

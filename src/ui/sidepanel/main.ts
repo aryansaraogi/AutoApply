@@ -1,31 +1,43 @@
 import '../shared.css';
 import './sidepanel.css';
 
-import { PROFILE_KEYS, filledCount } from '@/storage/schema';
+import { PROFILE_KEYS, USABLE_FIELD_COUNT, filledCount } from '@/storage/schema';
 import { loadProfile, onProfileChanged } from '@/storage/profile';
 import {
   CLOSED_STAGES,
-  STAGE_LABELS,
   listApplications,
   type ApplicationRecord,
 } from '@/storage/applications';
 import { sendToTab, type FillSummary, type PageDescription } from '@/core/messages';
 import { hasAllSiteAccess, requestAllSiteAccess } from '@/storage/permissions';
+import { el, must } from '../dom';
+import { formatAge, formatExact } from '../format';
+import { stageTag } from '../stages';
 
-function must<T extends HTMLElement>(id: string): T {
-  const node = document.getElementById(id);
-  if (!node) throw new Error(`Missing element #${id}`);
-  return node as T;
-}
+/**
+ * What the "this page" card is currently showing. Set as `data-state` on the
+ * card, which is what decides in CSS which action button and which text lines
+ * are visible — so there is one place to look for "why is that button showing?"
+ * rather than a scatter of `hidden` assignments.
+ */
+type PageState =
+  /** Still asking the tab what it is. */
+  | 'checking'
+  /** Not a page AutoApply can ever run on — a chrome:// page, a blank tab. */
+  | 'no-page'
+  /** Chrome will not reveal the URL and every-site access has not been granted. */
+  | 'needs-access'
+  /** An ordinary web page, but the content script is not answering there. */
+  | 'not-running'
+  /** Running, but the page has no fillable fields on it. */
+  | 'empty-form'
+  /** Ready to fill. */
+  | 'ready'
+  | 'filling'
+  | 'filled';
 
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<HTMLElementTagNameMap[K]> = {},
-  children: (Node | string)[] = [],
-): HTMLElementTagNameMap[K] {
-  const node = Object.assign(document.createElement(tag), props);
-  for (const child of children) node.append(child);
-  return node;
+function setState(state: PageState): void {
+  must<HTMLElement>('page-card').dataset.state = state;
 }
 
 async function activeTab(): Promise<chrome.tabs.Tab | null> {
@@ -38,6 +50,26 @@ async function activeTab(): Promise<chrome.tabs.Tab | null> {
 let currentTabId: number | null = null;
 let currentTabUrl: string | null = null;
 
+/** Renders the result block under the fill button, or clears it. */
+function showResult(
+  tone: 'ok' | 'warn' | 'error' | null,
+  headline = '',
+  detail = '',
+): void {
+  const box = must<HTMLElement>('fill-result');
+  if (!tone) {
+    box.hidden = true;
+    box.replaceChildren();
+    return;
+  }
+  box.className = `fill-result ${tone}`;
+  box.hidden = false;
+  box.replaceChildren(
+    el('p', { className: 'result-headline', textContent: headline }),
+    ...(detail ? [el('p', { className: 'result-detail', textContent: detail })] : []),
+  );
+}
+
 /**
  * Turns AutoApply on for a site the manifest does not cover.
  *
@@ -46,7 +78,6 @@ let currentTabUrl: string | null = null;
  * inject the declared content script — so it is injected explicitly.
  */
 async function enableOnCurrentSite(): Promise<void> {
-  const result = must<HTMLElement>('fill-result');
   if (currentTabId === null || !currentTabUrl) return;
 
   let origin: string;
@@ -58,8 +89,7 @@ async function enableOnCurrentSite(): Promise<void> {
 
   const granted = await chrome.permissions.request({ origins: [origin] });
   if (!granted) {
-    result.className = 'small fill-result warn';
-    result.textContent = 'Permission declined — AutoApply stays off for this site.';
+    showResult('warn', 'Permission declined', 'AutoApply stays off for this site.');
     return;
   }
 
@@ -69,14 +99,16 @@ async function enableOnCurrentSite(): Promise<void> {
       files: ['content.js'],
     });
   } catch (error) {
-    result.className = 'small fill-result error';
-    result.textContent = 'Could not start on this page. Reload it and try again.';
+    showResult(
+      'error',
+      'Could not start on this page',
+      'Reload the page and try again.',
+    );
     console.error('[AutoApply] injection failed', error);
     return;
   }
 
-  result.className = 'small fill-result muted';
-  result.textContent = '';
+  showResult(null);
   await refreshPageCard();
 }
 
@@ -90,17 +122,18 @@ async function enableOnCurrentSite(): Promise<void> {
  * profile page.
  */
 async function grantAllSites(): Promise<void> {
-  const result = must<HTMLElement>('fill-result');
   const granted = await requestAllSiteAccess();
 
   if (!granted) {
-    result.className = 'small fill-result warn';
-    result.textContent = 'Declined — AutoApply still works on the six supported job boards.';
+    showResult(
+      'warn',
+      'Declined',
+      'AutoApply still works on the six supported job boards.',
+    );
     return;
   }
 
-  result.className = 'small fill-result muted';
-  result.textContent = '';
+  showResult(null);
   // The content script is not injected retroactively into pages already open.
   if (currentTabId !== null) {
     await chrome.scripting
@@ -112,26 +145,24 @@ async function grantAllSites(): Promise<void> {
 
 async function refreshPageCard(): Promise<void> {
   const pill = must<HTMLElement>('adapter-pill');
-  const target = must<HTMLElement>('page-target');
-  const button = must<HTMLButtonElement>('fill-button');
+  const role = must<HTMLElement>('page-role');
+  const meta = must<HTMLElement>('page-meta');
+  const note = must<HTMLElement>('page-note');
   const enable = must<HTMLButtonElement>('enable-button');
-  const grant = must<HTMLButtonElement>('grant-button');
 
   const tab = await activeTab();
   currentTabId = tab?.id ?? null;
   currentTabUrl = tab?.url ?? null;
-  enable.hidden = true;
-  grant.hidden = true;
-  // A disabled primary button still dominates the card, pulling attention to the
-  // one thing that cannot be done while the actionable button sits below it in a
-  // quieter style. Hide it outright until filling is genuinely possible.
-  button.hidden = true;
-  button.disabled = true;
+
+  const idle = (state: PageState, pillText: string, pillTone: string, noteText: string) => {
+    pill.textContent = pillText;
+    pill.className = `pill ${pillTone}`.trim();
+    note.textContent = noteText;
+    setState(state);
+  };
 
   if (!tab?.id) {
-    pill.textContent = 'No page';
-    pill.className = 'pill warn';
-    target.textContent = 'Open a job application to get started.';
+    idle('no-page', 'No page', 'warn', 'Open a job application to get started.');
     return;
   }
 
@@ -147,153 +178,197 @@ async function refreshPageCard(): Promise<void> {
   // the grant button is not just useless but implies the grant did not work.
   if (!tab.url) {
     if (await hasAllSiteAccess()) {
-      pill.textContent = 'No page';
-      pill.className = 'pill warn';
-      target.textContent =
+      idle(
+        'no-page',
+        'No page',
+        'warn',
         'This is one of Chrome’s own pages, which no extension can read. Open a job ' +
-        'application to get started.';
+          'application to get started.',
+      );
       return;
     }
-    pill.textContent = 'Needs access';
-    pill.className = 'pill warn';
-    target.textContent =
+    idle(
+      'needs-access',
+      'Needs access',
+      'warn',
       'Chrome hides this page’s address until AutoApply is allowed here, so it cannot ' +
-      'offer to turn on for this one site by name. Granting every site once fixes it for ' +
-      'good — you can take it back on the profile page.';
-    grant.hidden = false;
+        'offer to turn on for this one site by name. Granting every site once fixes it ' +
+        'for good — you can take it back on the profile page.',
+    );
     return;
   }
 
   if (!/^https?:/.test(tab.url)) {
-    pill.textContent = 'No page';
-    pill.className = 'pill warn';
-    target.textContent = 'Open a job application to get started.';
+    idle('no-page', 'No page', 'warn', 'Open a job application to get started.');
     return;
   }
 
   const description = await sendToTab<PageDescription>(tab.id, { type: 'DESCRIBE_PAGE' });
 
   if (!description) {
-    pill.textContent = 'Not running';
-    pill.className = 'pill warn';
     // With every site already granted the extension does run here — but only on
     // pages opened since the grant, because Chrome does not inject into tabs
     // that were already loaded. Telling that user to "turn it on for this
     // domain" reads as though their grant failed.
     const allSites = await hasAllSiteAccess();
-    target.textContent = allSites
-      ? 'AutoApply is allowed on this site but was not running when the page loaded. ' +
-        'Start it here, or reload the page.'
-      : 'AutoApply runs automatically on Greenhouse, Lever, Ashby, Workable, SmartRecruiters ' +
-        'and Workday. On any other site you can turn it on for this domain, and it will use ' +
-        'its generic form handling.';
-    enable.textContent = allSites ? 'Start AutoApply on this page' : 'Enable AutoApply on this site';
-    // The generic adapter handles any ordinary form — it just needs permission
-    // for this origin first, which only the user can grant.
-    enable.hidden = false;
+    idle(
+      'not-running',
+      'Not running',
+      'warn',
+      allSites
+        ? 'AutoApply is allowed on this site but was not running when the page loaded. ' +
+            'Start it here, or reload the page.'
+        : 'AutoApply runs automatically on Greenhouse, Lever, Ashby, Workable, ' +
+            'SmartRecruiters and Workday. On any other site you can turn it on for this ' +
+            'domain, and it will use its generic form handling.',
+    );
+    enable.textContent = allSites
+      ? 'Start AutoApply on this page'
+      : 'Enable AutoApply on this site';
     return;
   }
 
   pill.textContent = description.adapter;
   pill.className = 'pill ok';
 
-  const heading = [description.role, description.company].filter(Boolean).join(' · ');
-  const detail = [`${description.fieldCount} fields detected`];
-  if (description.step) {
-    detail.push(`step ${description.step.current} of ${description.step.total}`);
-  }
-  target.textContent = heading ? `${heading} — ${detail.join(', ')}` : detail.join(', ');
+  // A page with a form but no recognisable posting still fills fine; saying
+  // "Application form" is more honest than inventing a title for it.
+  role.textContent = description.role || 'Application form';
 
-  // The only state where filling is actually possible.
-  button.hidden = false;
-  button.disabled = description.fieldCount === 0;
+  const bits: string[] = [];
+  if (description.company) bits.push(description.company);
+  bits.push(`${description.fieldCount} field${description.fieldCount === 1 ? '' : 's'} detected`);
+  if (description.step) {
+    bits.push(`step ${description.step.current} of ${description.step.total}`);
+  }
+  meta.textContent = bits.join(' · ');
+
+  if (description.fieldCount === 0) {
+    note.textContent =
+      'AutoApply is running here but cannot see any fields to fill. If the form is ' +
+      'behind a “Apply” button, open it first.';
+    setState('empty-form');
+    return;
+  }
+
+  setState('ready');
 }
 
 async function runFill(): Promise<void> {
   const button = must<HTMLButtonElement>('fill-button');
-  const result = must<HTMLElement>('fill-result');
-
   if (currentTabId === null) return;
 
   button.disabled = true;
-  result.className = 'small fill-result muted';
-  result.textContent = 'Filling…';
+  setState('filling');
+  showResult('ok', 'Filling…');
 
   const summary = await sendToTab<FillSummary>(currentTabId, { type: 'FILL_PAGE' });
+  button.disabled = false;
 
   if (!summary) {
-    result.className = 'small fill-result error';
-    result.textContent = 'The page stopped responding. Reload it and try again.';
-    button.disabled = false;
+    setState('ready');
+    showResult(
+      'error',
+      'The page stopped responding',
+      'Reload it and try again.',
+    );
     return;
   }
 
-  const parts = [`Filled ${summary.filled}`, `skipped ${summary.skipped}`];
-  if (summary.requiredUnfilled > 0) parts.push(`${summary.requiredUnfilled} required still empty`);
-  result.className = `small fill-result ${summary.requiredUnfilled > 0 ? 'warn' : 'ok'}`;
-  result.textContent = `${parts.join(' · ')}. Review the page, then submit yourself.`;
+  setState('filled');
 
-  button.disabled = false;
+  const detail = `${summary.skipped} skipped. Review the page, then submit it yourself.`;
+
+  if (summary.requiredUnfilled > 0) {
+    showResult(
+      'warn',
+      `Filled ${summary.filled} — ${summary.requiredUnfilled} required still empty`,
+      `${detail} The review panel on the page lists what needs you.`,
+    );
+  } else if (summary.filled === 0) {
+    showResult(
+      'warn',
+      'Nothing was filled',
+      'The review panel on the page explains why each field was skipped.',
+    );
+  } else {
+    showResult('ok', `Filled ${summary.filled} field${summary.filled === 1 ? '' : 's'}`, detail);
+  }
+
   await refreshHistory();
 }
 
-// ── profile card ────────────────────────────────────────────────────────────
+// ── profile strip ───────────────────────────────────────────────────────────
 
 async function refreshProfileCard(): Promise<void> {
-  const pill = must<HTMLElement>('profile-pill');
+  const count = must<HTMLElement>('profile-count');
+  const meter = must<HTMLElement>('profile-meter');
   const hint = must<HTMLElement>('profile-hint');
 
   const profile = await loadProfile();
   const filled = filledCount(profile);
   const total = PROFILE_KEYS.length;
 
-  pill.textContent = `${filled}/${total}`;
-  pill.className = `pill ${filled >= 12 ? 'ok' : 'warn'}`;
+  count.textContent = `${filled} of ${total}`;
+  meter.style.width = `${Math.round((filled / total) * 100)}%`;
+  meter.className =
+    `meter-fill ${filled < USABLE_FIELD_COUNT ? 'low' : filled === total ? 'done' : ''}`.trim();
+
+  // Only says something when there is something to do about it. A complete
+  // profile does not need to be congratulated every time the panel opens.
   hint.textContent =
     filled === 0
-      ? 'Your profile is empty — there is nothing to fill with yet. Open Profile to add your details.'
-      : filled < 12
+      ? 'Empty — there is nothing to fill forms with yet. Open the profile to add your details.'
+      : filled < USABLE_FIELD_COUNT
         ? 'Add more details to cover the fields most applications ask for.'
-        : 'Ready to fill.';
+        : '';
 }
 
 // ── history ─────────────────────────────────────────────────────────────────
 
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 function historyItem(record: ApplicationRecord): HTMLElement {
-  const item = el('li', { className: 'history-item' });
+  const closed = CLOSED_STAGES.includes(record.stage);
+  const item = el('li', { className: `history-item${closed ? ' closed' : ''}` });
 
-  const title = record.role || record.company || record.host || 'Application';
-  item.append(
-    el('a', {
-      className: 'history-role',
-      href: record.url,
-      target: '_blank',
-      rel: 'noreferrer',
-      textContent: title,
-    }),
+  const link = el('a', {
+    className: 'history-link',
+    href: record.url,
+    target: '_blank',
+    rel: 'noreferrer',
+    title: record.url,
+  });
+
+  link.append(
     el('span', {
-      className: `pill ${CLOSED_STAGES.includes(record.stage) ? '' : record.stage === 'draft' ? 'warn' : 'ok'}`,
-      textContent: STAGE_LABELS[record.stage],
+      className: 'history-role',
+      textContent: record.role || record.company || record.host || 'Application',
     }),
   );
 
-  const meta = [record.company, formatDate(record.createdAt), `${record.fieldsFilled} filled`]
-    .filter(Boolean)
-    .join(' · ');
-  item.append(el('span', { className: 'history-meta', textContent: meta }));
+  // Company · stage · age. The separators are drawn in CSS rather than added as
+  // text nodes, so a screen reader reads three facts instead of interleaving
+  // them with "middle dot".
+  const meta = el('span', { className: 'history-meta' });
+  if (record.company && record.role) {
+    meta.append(el('span', { className: 'history-company', textContent: record.company }));
+  }
+  // The same dot and wording the tracker uses, so a stage is recognisable
+  // wherever it turns up.
+  meta.append(stageTag(record.stage));
+  meta.append(
+    el('span', {
+      className: 'tabular',
+      textContent: formatAge(record.createdAt),
+      title: formatExact(record.createdAt),
+    }),
+  );
 
+  link.append(meta);
+  item.append(link);
   return item;
 }
 
-/** The panel is ~320px wide — it shows recent activity; the tracker page manages. */
+/** The panel is narrow — it shows recent activity; the tracker page manages. */
 const RECENT_LIMIT = 6;
 
 async function refreshHistory(): Promise<void> {
@@ -312,9 +387,9 @@ function openTracker(): void {
 // ── boot ────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  must<HTMLButtonElement>('open-options').addEventListener('click', () =>
-    chrome.runtime.openOptionsPage(),
-  );
+  const openOptions = () => chrome.runtime.openOptionsPage();
+  must<HTMLButtonElement>('open-options').addEventListener('click', openOptions);
+  must<HTMLButtonElement>('profile-open').addEventListener('click', openOptions);
   must<HTMLButtonElement>('fill-button').addEventListener('click', () => void runFill());
   must<HTMLButtonElement>('enable-button').addEventListener('click', () =>
     void enableOnCurrentSite(),
