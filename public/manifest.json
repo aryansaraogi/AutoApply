@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AutoApply",
   "version": "1.0.0",
-  "description": "Fills job applications from a profile stored on your machine. Highlights what it filled and what it skipped — you always submit yourself.",
+  "description": "Fills job applications from a profile stored on your own computer. Shows what it filled. Never submits for you.",
 
   "icons": {
     "16": "icons/icon-16.png",

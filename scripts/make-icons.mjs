@@ -184,6 +184,14 @@ async function main() {
         mobile: false,
       });
 
+      // Asked for explicitly rather than relying on --default-background-color,
+      // which current Chrome builds ignore at capture time — leaving the corners
+      // outside the rounded square opaque white instead of transparent, which
+      // shows as a white tile behind the mark on a dark toolbar.
+      await cdp.send('Emulation.setDefaultBackgroundColorOverride', {
+        color: { r: 0, g: 0, b: 0, a: 0 },
+      });
+
       const html = markup(size).replace(/`/g, '\\`');
       await cdp.send('Runtime.evaluate', {
         expression: `document.open(); document.write(\`${html}\`); document.close();`,

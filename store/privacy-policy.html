@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoApply — Privacy Policy</title>
+    <meta
+      name="description"
+      content="AutoApply makes no network requests. Your profile, résumés and application history stay in your own browser on your own machine."
+    />
+    <style>
+      /* Self-contained on purpose: this page has to be hostable anywhere —
+         GitHub Pages, Drive, a static bucket — with no build step and nothing
+         to fetch. Same no-remote-assets rule the extension itself follows. */
+      :root {
+        --bg: #fcfcfd;
+        --card: #ffffff;
+        --border: #e5e7ee;
+        --text: #14161d;
+        --muted: #4b5168;
+        --accent: #4f46e5;
+        --ok: #16794a;
+        --ok-bg: #e6f5ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1116;
+          --card: #1c2029;
+          --border: #2a2f3b;
+          --text: #e9ebf0;
+          --muted: #98a1b2;
+          --accent: #8b87f5;
+          --ok: #4ecf94;
+          --ok-bg: #102b1e;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 48px 20px 96px;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+      .mark {
+        width: 40px; height: 40px; border-radius: 10px; background: var(--accent);
+        display: flex; flex-direction: column; justify-content: center; gap: 5px;
+        padding: 0 9px; flex: none;
+      }
+      .mark i { height: 4px; border-radius: 99px; background: #fff; display: block; }
+      .mark i:last-child { width: 55%; opacity: .72; }
+      h1 { font-size: 30px; line-height: 1.2; letter-spacing: -.02em; margin: 0; }
+      .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+      h2 {
+        font-size: 20px; letter-spacing: -.01em; margin: 40px 0 12px;
+        padding-top: 24px; border-top: 1px solid var(--border);
+      }
+      p { margin: 0 0 14px; }
+      ul { margin: 0 0 14px; padding-left: 22px; }
+      li { margin-bottom: 7px; }
+      a { color: var(--accent); text-underline-offset: 2px; }
+      code {
+        font-family: ui-monospace, Consolas, monospace; font-size: .9em;
+        background: rgba(127,127,127,.14); padding: 1px 5px; border-radius: 4px;
+      }
+      .callout {
+        background: var(--ok-bg); border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+        border-radius: 12px; padding: 20px 22px; margin: 24px 0;
+      }
+      .callout strong { color: var(--ok); display: block; font-size: 18px; margin-bottom: 6px; }
+      table { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 15px; }
+      th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+      .scroll { overflow-x: auto; }
+      footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">
+        <span class="mark" aria-hidden="true"><i></i><i></i></span>
+        <div>
+          <h1>AutoApply — Privacy Policy</h1>
+          <p class="sub">Last updated 27 August 2026 · Applies to AutoApply version 1.0.0</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>AutoApply does not send your data anywhere.</strong>
+        There is no server, no account, no analytics and no telemetry. Everything it
+        stores stays in your own browser on your own computer. The extension makes
+        <em>no network requests of any kind</em> — there is no <code>fetch</code>,
+        no <code>XMLHttpRequest</code>, and no third-party library that could add one.
+      </div>
+
+      <h2>What is stored</h2>
+      <p>
+        All of it lives in <code>chrome.storage.local</code>, Chrome's per-device
+        extension storage, on the machine where you installed the extension.
+      </p>
+      <div class="scroll">
+        <table>
+          <tr><th>Data</th><th>What it is</th><th>Why</th></tr>
+          <tr>
+            <td>Profile</td>
+            <td>
+              Name, email, phone, address, links, current job, education, salary and
+              start-date preferences, work eligibility answers, and voluntary
+              equal-opportunity answers (gender, race/ethnicity, veteran and
+              disability status) — all entered by you
+            </td>
+            <td>Filling application forms</td>
+          </tr>
+          <tr>
+            <td>Résumés</td>
+            <td>The .pdf / .docx / .doc / .rtf / .txt files you upload</td>
+            <td>Attaching to résumé uploads on application forms</td>
+          </tr>
+          <tr>
+            <td>Application history</td>
+            <td>Company, job title, page URL, date, pipeline stage, your notes, and how many fields were filled</td>
+            <td>The job tracker</td>
+          </tr>
+          <tr><td>Settings</td><td>Two on/off preferences</td><td>Remembering your choices</td></tr>
+        </table>
+      </div>
+      <p>
+        The equal-opportunity answers are sensitive by nature. They are stored only
+        because US application forms routinely ask for them, they are entirely
+        optional, and they never leave your device.
+      </p>
+
+      <h2>What is never collected</h2>
+      <ul>
+        <li>No browsing history. The extension only reads a page when you ask it to fill one.</li>
+        <li>No keystrokes, no page contents, no screenshots.</li>
+        <li>No analytics, crash reports, usage statistics, or identifiers of any kind.</li>
+        <li>Nothing is sold, shared, or transferred to anyone, because nothing is transmitted.</li>
+      </ul>
+
+      <h2>What AutoApply deliberately will not touch</h2>
+      <ul>
+        <li>It never submits a form. You review and submit yourself.</li>
+        <li>
+          It never fills passwords, national insurance or social security numbers,
+          bank or card details, passport or driving licence numbers, or dates of birth.
+        </li>
+        <li>It never ticks a checkbox, since almost every one is a consent or acknowledgement.</li>
+        <li>It only attaches a résumé, and only to a field whose label asks for one.</li>
+      </ul>
+
+      <h2>Permissions</h2>
+      <div class="scroll">
+        <table>
+          <tr><th>Permission</th><th>What it is for</th></tr>
+          <tr><td><code>storage</code></td><td>Saving the data above on your device</td></tr>
+          <tr><td><code>activeTab</code></td><td>Reading the current tab's address, to tell you which job board you are on</td></tr>
+          <tr><td><code>scripting</code></td><td>Starting the form filler on a site you explicitly enable it for</td></tr>
+          <tr><td><code>sidePanel</code></td><td>Drawing the extension's panel</td></tr>
+          <tr>
+            <td>Access to six job boards</td>
+            <td>Greenhouse, Lever, Ashby, Workable, SmartRecruiters and Workday — the sites it works on automatically</td>
+          </tr>
+          <tr>
+            <td>Optional access to other sites</td>
+            <td>
+              Never requested when you install. Granted one site at a time, only when
+              you press “Enable AutoApply on this site” on a careers page outside
+              those six.
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h2>Deleting your data</h2>
+      <ul>
+        <li><strong>Profile</strong> — “Clear profile” on the profile page</li>
+        <li><strong>A résumé</strong> — “Remove” next to it on the profile page</li>
+        <li><strong>An application</strong> — “Delete” on that row in the tracker</li>
+        <li>
+          <strong>Everything</strong> — remove the extension from
+          <code>chrome://extensions</code>; Chrome deletes its storage with it
+        </li>
+      </ul>
+      <p>None of this requires contacting anyone, because nobody else has a copy.</p>
+
+      <h2>Changes</h2>
+      <p>
+        Any future version that transmits data would require a new permission, which
+        Chrome shows you before it installs. This policy would be updated in the same
+        release, and the date at the top would change.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions or problems: <a href="mailto:askzayn9@gmail.com">askzayn9@gmail.com</a>
+      </p>
+
+      <footer>AutoApply is a Chrome extension that fills job application forms from a profile stored on your own computer. It never submits anything.</footer>
+    </main>
+  </body>
+</html>

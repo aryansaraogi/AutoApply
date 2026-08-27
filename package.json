@@ -9,6 +9,7 @@
     "build:release": "npm run typecheck && vite build --mode release && vite build --config vite.content.config.ts --mode release && npm run check:manifest",
     "package": "npm run build:release && node scripts/package.mjs",
     "icons": "node scripts/make-icons.mjs",
+    "store:assets": "node scripts/make-store-assets.mjs",
     "check:manifest": "node scripts/check-manifest.mjs",
     "build:pages": "vite build",
     "build:content": "vite build --config vite.content.config.ts",
