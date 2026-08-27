@@ -1,3 +1,10 @@
+/* The job tracker.
+
+   Opens in an ordinary browser tab, which means it has to survive being half a
+   screen wide — a split window, a laptop, a user who keeps it docked beside a
+   job posting. There are two layouts: the table, and a card list below
+   --card-breakpoint. */
+
 .tracker {
   max-width: 1180px;
   margin: 0 auto;
@@ -9,24 +16,70 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
+}
+
+.tracker-title {
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  flex: none;
+  border-radius: 5px;
 }
 
 .tracker-header h1 {
   font-size: 22px;
 }
 
+.tracker-header .muted {
+  margin-top: 3px;
+}
+
+/* ── controls ────────────────────────────────────────────────────────────── */
+
 .controls {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
   margin: 16px 0 12px;
 }
 
-.controls input[type='text'] {
+.search-field {
+  position: relative;
   flex: 1;
-  min-width: 0;
+  min-width: 200px;
+}
+
+/* An inline SVG rather than a glyph: ⌕ and 🔍 are both missing from at least one
+   platform's default UI font, and a magnifier that renders as tofu is worse than
+   no icon at all. */
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  padding-left: 29px;
+}
+
+/* Chrome draws its own clear button on type=search; the default is tiny and
+   sits oddly against a bordered field. */
+.search-field input::-webkit-search-cancel-button {
+  cursor: pointer;
 }
 
 .sort-field {
@@ -54,6 +107,9 @@
 }
 
 .stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 11px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
@@ -62,10 +118,12 @@
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
+  box-shadow: none;
 }
 
-.stage-chip:hover {
+.stage-chip:hover:not(:disabled) {
   border-color: var(--accent);
+  background: var(--bg-raised);
 }
 
 .stage-chip[aria-pressed='true'] {
@@ -74,16 +132,36 @@
   color: var(--accent-contrast);
 }
 
+/* A stage with nothing in it stays visible so the pipeline reads as a whole,
+   but it stops looking like something to click. */
+.stage-chip.is-empty {
+  opacity: 0.5;
+}
+
 .stage-chip .count {
-  opacity: 0.7;
-  margin-left: 4px;
+  opacity: 0.75;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── grid ────────────────────────────────────────────────────────────────── */
+/* ── the table ───────────────────────────────────────────────────────────── */
+
+.grid-scroll {
+  overflow-x: auto;
+  /* Makes this the containing block for its own descendants. Without it the
+     absolutely-positioned .sr-only span in the header row is laid out against
+     the page instead of against this box, escapes the scroll container, and
+     stretches the document — so the page scrolled sideways even though the
+     table was already scrolling inside here. */
+  position: relative;
+  /* Room for the focus ring on the first and last columns, which would
+     otherwise be clipped by the scroll container. */
+  margin: 0 -2px;
+  padding: 0 2px;
+}
 
 .grid {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -97,16 +175,25 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .grid td {
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
-.grid tr.closed td:not(:last-child) {
-  opacity: 0.55;
+.grid tbody tr {
+  transition: background var(--ease);
+}
+
+.grid tbody tr:hover {
+  background: var(--bg-sunken);
+}
+
+.grid tr.closed td {
+  opacity: 0.58;
 }
 
 /* Editable cells read as text until touched, so the table stays a table rather
@@ -126,14 +213,14 @@
   border-color: var(--border-strong);
 }
 
-.col-role input:focus-visible,
-.col-company input:focus-visible,
-.col-notes input:focus-visible {
+.col-role input:focus,
+.col-company input:focus,
+.col-notes input:focus {
   background: var(--bg-raised);
 }
 
 .col-role {
-  min-width: 220px;
+  min-width: 210px;
 }
 
 .col-role input {
@@ -142,29 +229,31 @@
 }
 
 .col-company {
-  max-width: 200px;
+  min-width: 130px;
+  max-width: 190px;
 }
 
-.open-link {
-  font-size: 12px;
-  font-weight: 550;
-  text-decoration: none;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
+.col-notes {
+  min-width: 180px;
 }
 
-.open-link:hover {
-  background: var(--bg-sunken);
-  text-decoration: underline;
+/* ── stage cell ──────────────────────────────────────────────────────────── */
+
+.stage-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .col-stage select {
   width: auto;
-  min-width: 116px;
-  padding: 4px 7px;
+  min-width: 112px;
+  padding: 4px 24px 4px 7px;
   font-size: 12px;
   font-weight: 600;
 }
+
+/* ── dates and stage age ─────────────────────────────────────────────────── */
 
 .col-applied {
   white-space: nowrap;
@@ -172,45 +261,164 @@
   font-variant-numeric: tabular-nums;
 }
 
-.col-actions {
-  text-align: right;
+.col-age {
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* An open application that has not moved in weeks is the one thing a tracker
+   exists to surface. stageChangedAt has always been recorded; nothing showed it
+   until now. */
+.col-age.stale {
+  color: var(--warn);
+  font-weight: 620;
+}
+
+.col-age-head {
+  white-space: nowrap;
+}
+
+/* ── row actions ─────────────────────────────────────────────────────────── */
+
+.col-actions {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   justify-content: flex-end;
   align-items: center;
 }
 
-.icon-button {
-  padding: 3px 8px;
+.open-link {
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 550;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  transition: background var(--ease);
 }
 
-.icon-button:hover {
+.open-link:hover {
+  background: var(--accent-soft);
+  text-decoration: underline;
+}
+
+.icon-button {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.icon-button:hover:not(:disabled) {
   color: var(--danger);
-  border-color: var(--danger);
+  border-color: transparent;
+  background: var(--danger-bg);
 }
 
-.stage-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  margin-right: 7px;
-  vertical-align: baseline;
+/* ── empty state ─────────────────────────────────────────────────────────── */
+
+.empty-state {
+  margin-top: 12px;
 }
 
-.empty {
-  margin-top: 32px;
-  text-align: center;
-}
+/* ── narrow layout ───────────────────────────────────────────────────────── */
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/* Below this the seven columns cannot be read without sideways scrolling, so
+   each row becomes a card instead. The markup is unchanged — the table elements
+   are re-flowed with display, which keeps one rendering path in tracker/main.ts
+   rather than two. */
+@media (max-width: 780px) {
+  .tracker {
+    padding: 18px 14px 60px;
+  }
+
+  .grid-scroll {
+    overflow-x: visible;
+  }
+
+  .grid,
+  .grid tbody,
+  .grid tr,
+  .grid td {
+    display: block;
+    min-width: 0;
+    width: auto;
+  }
+
+  .grid thead {
+    /* The column headings have no meaning once the rows stop being rows; each
+       cell carries its own label instead (::before, below). */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .grid tbody tr {
+    margin-bottom: 10px;
+    padding: 4px 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .grid tbody tr:hover {
+    background: var(--bg-raised);
+  }
+
+  .grid td {
+    border-bottom: none;
+    padding: 4px 10px;
+  }
+
+  /* Everything except the role gets a label, since the role is the card's title
+     and needs no explaining. */
+  .grid td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-subtle);
+  }
+
+  .col-role {
+    padding-top: 8px;
+  }
+
+  .col-role input {
+    font-size: 15px;
+  }
+
+  /* Two short values side by side rather than stacked, which would make every
+     card needlessly tall. Qualified with `.grid td` so it outranks the
+     `display: block` above — a bare `.col-applied` loses to it on specificity
+     and silently stacks. */
+  .grid td.col-applied,
+  .grid td.col-age {
+    display: inline-block;
+    width: 49%;
+    vertical-align: top;
+  }
+
+  .col-role input,
+  .col-company input,
+  .col-notes input {
+    border-color: var(--border);
+    background: var(--bg-sunken);
+  }
+
+  .actions {
+    justify-content: flex-start;
+    padding-top: 4px;
+  }
 }

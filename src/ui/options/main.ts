@@ -6,6 +6,7 @@ import {
   GROUP_ORDER,
   PROFILE_FIELDS,
   PROFILE_KEYS,
+  USABLE_FIELD_COUNT,
   normalizeProfile,
   type FieldGroup,
   type Profile,
@@ -20,14 +21,17 @@ import {
   revokeAllSiteAccess,
 } from '@/storage/permissions';
 import {
+  MAX_FILE_BYTES,
   addResume,
   deleteResume,
   formatBytes,
+  isAcceptedFile,
   listResumes,
   renameResume,
   setDefaultResume,
   type ResumeMeta,
 } from '@/storage/resumes';
+import { debounce, el, must } from '../dom';
 
 const SAVE_DEBOUNCE_MS = 400;
 
@@ -36,22 +40,6 @@ function isWide(spec: ProfileFieldSpec): boolean {
   if (spec.control === 'textarea') return true;
   if (spec.label.length > 38) return true;
   return (spec.options ?? []).some((o) => o.length > 30);
-}
-
-function must<T extends HTMLElement>(id: string): T {
-  const el = document.getElementById(id);
-  if (!el) throw new Error(`Missing element #${id}`);
-  return el as T;
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<HTMLElementTagNameMap[K]> = {},
-  children: (Node | string)[] = [],
-): HTMLElementTagNameMap[K] {
-  const node = Object.assign(document.createElement(tag), props);
-  for (const child of children) node.append(child);
-  return node;
 }
 
 // ── profile form ────────────────────────────────────────────────────────────
@@ -113,9 +101,129 @@ function buildGroup(group: FieldGroup, profile: Profile): HTMLElement {
 
 function buildNav(): void {
   const nav = must<HTMLElement>('group-nav');
-  for (const group of GROUP_ORDER) {
-    nav.append(el('a', { href: `#group-${group}`, textContent: GROUP_LABELS[group] }));
+  nav.replaceChildren(
+    ...GROUP_ORDER.map((group) => {
+      const link = el('a', { href: `#group-${group}` });
+      link.dataset.group = group;
+      link.append(
+        el('span', { textContent: GROUP_LABELS[group] }),
+        el('span', { className: 'nav-count' }),
+      );
+      return link;
+    }),
+  );
+}
+
+// ── completeness ────────────────────────────────────────────────────────────
+
+/**
+ * Recounts filled fields from the live form and updates the header meter and the
+ * per-group counts in the nav.
+ *
+ * Read from the DOM rather than from storage so the numbers move as you type,
+ * rather than lagging a debounced save behind you.
+ */
+function refreshCompleteness(): void {
+  const form = must<HTMLFormElement>('profile-form');
+
+  let filled = 0;
+  const perGroup = new Map<FieldGroup, { filled: number; total: number }>();
+
+  for (const spec of PROFILE_FIELDS) {
+    const control = form.elements.namedItem(spec.key);
+    const value =
+      control instanceof HTMLInputElement ||
+      control instanceof HTMLSelectElement ||
+      control instanceof HTMLTextAreaElement
+        ? control.value.trim()
+        : '';
+
+    const group = perGroup.get(spec.group) ?? { filled: 0, total: 0 };
+    group.total++;
+    if (value !== '') {
+      group.filled++;
+      filled++;
+    }
+    perGroup.set(spec.group, group);
   }
+
+  const total = PROFILE_KEYS.length;
+  must<HTMLElement>('completeness-count').textContent = `${filled} of ${total} fields`;
+
+  const meter = must<HTMLElement>('completeness-meter');
+  meter.style.width = `${Math.round((filled / total) * 100)}%`;
+  meter.className =
+    `meter-fill ${filled === total ? 'done' : filled < USABLE_FIELD_COUNT ? 'low' : ''}`.trim();
+
+  for (const link of must<HTMLElement>('group-nav').querySelectorAll<HTMLAnchorElement>('a')) {
+    const group = link.dataset.group as FieldGroup | undefined;
+    const counts = group ? perGroup.get(group) : undefined;
+    if (!counts) continue;
+    const count = link.querySelector('.nav-count');
+    if (count) count.textContent = `${counts.filled}/${counts.total}`;
+    link.classList.toggle('complete', counts.filled === counts.total);
+  }
+}
+
+/** Where on screen a section counts as "the one being read" — just below the
+ *  sticky header, rather than at the very top of the viewport. */
+const READING_LINE_PX = 140;
+
+/**
+ * Marks the section you are currently reading in the nav.
+ *
+ * A throttled scroll handler rather than an IntersectionObserver: with eight
+ * sections the work is eight getBoundingClientRect calls, and the "which one is
+ * active" rule stays a single readable comparison instead of a set of
+ * intersection states that have to be reconciled in callback order.
+ */
+function watchSections(): void {
+  const nav = must<HTMLElement>('group-nav');
+  const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
+  const sections = GROUP_ORDER.map((group) => document.getElementById(`group-${group}`)).filter(
+    (node): node is HTMLElement => node !== null,
+  );
+  if (sections.length === 0) return;
+
+  let blocked = false;
+
+  const update = () => {
+    // The last section whose top has passed the reading line — i.e. the one the
+    // reading line is currently inside. Before the first section has scrolled up
+    // that far, the first section is still the answer.
+    let active = sections[0] as HTMLElement;
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= READING_LINE_PX) active = section;
+    }
+
+    // At the very bottom the last section may be too short to reach the line;
+    // whatever is at the end of the page is what is on screen.
+    const atBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    if (atBottom) active = sections[sections.length - 1] as HTMLElement;
+
+    for (const link of links) link.classList.toggle('active', link.hash === `#${active.id}`);
+  };
+
+  // Leading edge, so the highlight moves the instant you start scrolling, then
+  // at most once per interval after that. Deliberately not requestAnimationFrame:
+  // it does not fire in a background or occluded tab, and a nav highlight frozen
+  // on whatever was on screen when the tab lost focus is worse than one updated
+  // a few milliseconds off a frame boundary.
+  const THROTTLE_MS = 100;
+  const onScroll = () => {
+    if (blocked) return;
+    blocked = true;
+    update();
+    setTimeout(() => {
+      blocked = false;
+      update();
+    }, THROTTLE_MS);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  update();
 }
 
 // ── save plumbing ───────────────────────────────────────────────────────────
@@ -126,6 +234,7 @@ const status = {
   show(text: string) {
     this.node ??= must<HTMLElement>('save-status');
     this.node.textContent = text;
+    this.node.classList.toggle('visible', text !== '');
     clearTimeout(this.timer);
     if (text) this.timer = window.setTimeout(() => this.show(''), 2000);
   },
@@ -139,14 +248,6 @@ function collectProfile(form: HTMLFormElement): Profile {
     profile[spec.key as ProfileKey] = typeof value === 'string' ? value : '';
   }
   return profile;
-}
-
-function debounce(fn: () => void, ms: number): () => void {
-  let timer = 0;
-  return () => {
-    clearTimeout(timer);
-    timer = window.setTimeout(fn, ms);
-  };
 }
 
 // ── résumés ─────────────────────────────────────────────────────────────────
@@ -205,12 +306,56 @@ async function wireResumes(): Promise<void> {
   const fileInput = must<HTMLInputElement>('resume-file');
   const addButton = must<HTMLButtonElement>('resume-add');
   const error = must<HTMLElement>('resume-error');
+  const drop = must<HTMLLabelElement>('resume-drop');
+  const filename = must<HTMLElement>('resume-filename');
+
+  const IDLE_TEXT = 'Choose a résumé, or drop one here';
 
   const refresh = async () => {
     const resumes = await listResumes();
     list.replaceChildren(...resumes.map((resume) => resumeItem(resume, refresh)));
     empty.hidden = resumes.length > 0;
   };
+
+  /** Reflects the chosen file in the drop zone and enables the add button. */
+  const showChoice = () => {
+    const file = fileInput.files?.[0];
+    error.textContent = '';
+    if (!file) {
+      filename.textContent = IDLE_TEXT;
+      addButton.disabled = true;
+      return;
+    }
+    filename.textContent = `${file.name} · ${formatBytes(file.size)}`;
+    // Say why up front rather than after a click that was always going to fail.
+    if (!isAcceptedFile(file.name)) {
+      error.textContent = 'That file type is not supported.';
+      addButton.disabled = true;
+    } else if (file.size > MAX_FILE_BYTES) {
+      error.textContent = `That file is ${formatBytes(file.size)}; the limit is ${formatBytes(MAX_FILE_BYTES)}.`;
+      addButton.disabled = true;
+    } else {
+      addButton.disabled = false;
+    }
+  };
+
+  fileInput.addEventListener('change', showChoice);
+
+  // Dropping onto the zone assigns the file to the real input, so there is only
+  // one path from here on and the button flow is identical either way.
+  drop.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    drop.classList.add('dragging');
+  });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragging'));
+  drop.addEventListener('drop', (event) => {
+    event.preventDefault();
+    drop.classList.remove('dragging');
+    const dropped = event.dataTransfer?.files;
+    if (!dropped || dropped.length === 0) return;
+    fileInput.files = dropped;
+    showChoice();
+  });
 
   addButton.addEventListener('click', async () => {
     error.textContent = '';
@@ -224,11 +369,11 @@ async function wireResumes(): Promise<void> {
     try {
       await addResume(file);
       fileInput.value = '';
+      showChoice();
       await refresh();
       status.show('Résumé saved');
     } catch (failure) {
       error.textContent = failure instanceof Error ? failure.message : 'Could not save that file.';
-    } finally {
       addButton.disabled = false;
     }
   });
@@ -381,6 +526,7 @@ async function main(): Promise<void> {
     const current = await loadProfile();
     form.replaceChildren();
     for (const group of GROUP_ORDER) form.append(buildGroup(group, current));
+    refreshCompleteness();
   };
 
   const persist = debounce(async () => {
@@ -394,8 +540,14 @@ async function main(): Promise<void> {
     status.show('Saved');
   }, SAVE_DEBOUNCE_MS);
 
-  form.addEventListener('input', persist);
-  form.addEventListener('change', persist);
+  const onEdit = () => {
+    // The meter tracks typing directly; only the write to storage is debounced.
+    refreshCompleteness();
+    persist();
+  };
+
+  form.addEventListener('input', onEdit);
+  form.addEventListener('change', onEdit);
   form.addEventListener('submit', (event) => event.preventDefault());
 
   must<HTMLButtonElement>('clear-profile').addEventListener('click', async () => {
@@ -404,6 +556,9 @@ async function main(): Promise<void> {
     await rerender();
     status.show('Profile cleared');
   });
+
+  refreshCompleteness();
+  watchSections();
 
   wireBackup(rerender);
   await wireResumes();

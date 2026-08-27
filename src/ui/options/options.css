@@ -1,58 +1,96 @@
+/* The profile page.
+
+   Forty fields is a long page, so two things carry most of the weight here: the
+   header stays put so completeness and the save state are always visible, and
+   the section nav tracks where you are and how much of each group is done. */
+
 .options {
   max-width: 1040px;
   margin: 0 auto;
-  padding: 24px 20px 64px;
+  padding: 0 20px 64px;
 }
 
+/* ── header ──────────────────────────────────────────────────────────────── */
+
 .options-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  /* The page background, so content scrolling underneath is hidden rather than
+     showing through. */
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin-bottom: 20px;
 }
 
+.options-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 0 14px;
+}
+
+.options-title {
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  flex: none;
+  border-radius: 5px;
+}
+
+.options-title .muted {
+  margin-top: 3px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Reserves its own width so the layout does not shift each time "Saved"
+   appears and clears. */
+.save-status {
+  min-width: 92px;
+  text-align: right;
+  color: var(--ok);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity var(--ease);
+}
+
+.save-status.visible {
+  opacity: 1;
+}
+
+.completeness {
+  width: 168px;
+}
+
+.completeness-line {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── body layout ─────────────────────────────────────────────────────────── */
+
 .options-body {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 28px;
   align-items: start;
-}
-
-@media (max-width: 760px) {
-  .options-body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .group-nav {
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
-.group-nav {
-  position: sticky;
-  top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.group-nav a {
-  padding: 6px 10px;
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 550;
-  text-decoration: none;
-}
-
-.group-nav a:hover {
-  background: var(--bg-sunken);
-  color: var(--text);
 }
 
 .options-content {
@@ -62,12 +100,75 @@
   min-width: 0;
 }
 
+/* ── section nav ─────────────────────────────────────────────────────────── */
+
+.group-nav {
+  /* Clears the sticky header rather than sliding under it. */
+  position: sticky;
+  top: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.group-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition:
+    background var(--ease),
+    color var(--ease),
+    border-color var(--ease);
+}
+
+.group-nav a:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+/* Set by the scroll spy in ui/options/main.ts. */
+.group-nav a.active {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.nav-count {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-subtle);
+}
+
+.group-nav a.active .nav-count {
+  color: inherit;
+}
+
+/* A finished group stops asking for attention. */
+.group-nav a.complete .nav-count {
+  color: var(--ok);
+}
+
+/* ── fieldsets ───────────────────────────────────────────────────────────── */
+
 fieldset {
   margin: 0;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-raised);
+  /* Anchor jumps from the nav would otherwise put the legend under the sticky
+     header. */
+  scroll-margin-top: 116px;
 }
 
 legend {
@@ -101,29 +202,73 @@ legend {
   max-width: 68ch;
 }
 
+.card {
+  scroll-margin-top: 116px;
+}
+
 /* ── résumés ─────────────────────────────────────────────────────────────── */
 
-.resume-add {
+.dropzone {
   display: flex;
-  gap: 8px;
   align-items: center;
-  margin-top: 10px;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  cursor: pointer;
+  transition:
+    border-color var(--ease),
+    background var(--ease);
 }
 
-.resume-add input[type='file'] {
-  flex: 1;
+.dropzone:hover {
+  border-color: var(--accent);
+}
+
+/* The file input inside is visually hidden, so the ring has to be drawn here or
+   keyboard users get no focus indication at all. */
+.dropzone:focus-within {
+  border-color: var(--accent);
+  border-style: solid;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.dropzone.dragging {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+}
+
+.dropzone-icon {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.dropzone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
-  font-size: 13px;
 }
 
-.resume-add button {
-  white-space: nowrap;
+.dropzone-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.resume-add {
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 .resume-error {
-  margin-top: 6px;
   color: var(--danger);
-  min-height: 1em;
+  margin: 0;
 }
 
 .resume-list {
@@ -133,6 +278,10 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.resume-list:empty {
+  margin: 0;
 }
 
 .resume-item {
@@ -146,8 +295,12 @@ legend {
   background: var(--bg-sunken);
 }
 
+/* The résumé that will actually be attached, marked in the one way that reads at
+   a glance in a list of several. */
 .resume-item.is-default {
-  border-color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--bg-raised);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .resume-label {
@@ -180,6 +333,12 @@ legend {
   font-size: 12px;
 }
 
+.resume-empty {
+  margin-top: 12px;
+}
+
+/* ── backup and reset ────────────────────────────────────────────────────── */
+
 .backup-actions {
   margin-top: 10px;
   flex-wrap: wrap;
@@ -205,4 +364,58 @@ legend {
 
 .danger-zone button {
   margin-top: 10px;
+}
+
+/* ── narrow layout ───────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .options-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  /* A horizontal strip of chips: still a way to jump between sections, without
+     eating a column of a narrow window. */
+  .group-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .group-nav a {
+    border-left: none;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .group-nav a.active {
+    border-color: var(--accent);
+  }
+}
+
+@media (max-width: 620px) {
+  .options {
+    padding: 0 14px 48px;
+  }
+
+  .options-header-inner {
+    gap: 12px;
+  }
+
+  .header-status {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .completeness {
+    flex: 1;
+    width: auto;
+  }
+
+  .save-status {
+    min-width: 0;
+    text-align: left;
+  }
 }

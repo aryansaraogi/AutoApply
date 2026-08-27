@@ -20,7 +20,7 @@ You review, then you submit. Every field it fills is outlined; every field it sk
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4?logo=googlechrome&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-2%20builds-646CFF?logo=vite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-230-brightgreen)
+![Tests](https://img.shields.io/badge/tests-240-brightgreen)
 ![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success)
 ![ATS adapters](https://img.shields.io/badge/ATS%20adapters-6-blueviolet)
 
@@ -57,7 +57,7 @@ Autofill tools solve this by guessing — and guessing wrong on a job applicatio
 
 ### 1 · Set up once
 
-Fill in your profile — around 40 fields — and add your résumés. It all lives in `chrome.storage.local` on your machine.
+Fill in your profile — around 40 fields — and add your résumés. A meter in the header and a count against each section show how far along you are. It all lives in `chrome.storage.local` on your machine.
 
 </td>
 <td width="33%" valign="top">
@@ -151,6 +151,10 @@ A record starts as **Draft** and advances to **Applied** automatically when a su
 
 Company, role and notes are editable in place. Company and role are *guesses* — careers pages are not built to be read by a machine, and a marketing headline or a routing segment in the URL can beat the real job title — so every guessed field is directly correctable, and **a correction you type is never overwritten by a later fill of the same posting.**
 
+An **In stage** column shows how long each application has sat where it is, and anything open that has not moved in three weeks is flagged — in the row, and in the count at the top of the page. Sorting by *Longest in stage* brings those to the front. Closed applications are excluded: a rejection that happened a month ago is finished, not stalled.
+
+Below about 780px the table becomes a list of cards, so the tracker stays usable in a half-width window next to a job posting.
+
 ---
 
 ## What it deliberately will not do
@@ -168,7 +172,7 @@ These are design decisions, not gaps. Each one is a place where guessing would h
 | 🛡️ **Never overwrites** | A value you typed yourself stays put. |
 | 🤷 **Refuses to guess** | When two rules match a field about equally well, it reports the field as ambiguous instead of picking one. |
 
-Everything skipped appears in the review panel **with its reason**, so *"why is this still empty?"* always has an answer on screen.
+Everything skipped appears in the review panel **with its reason**, so *"why is this still empty?"* always has an answer on screen. The panel collapses to a single counts bar and can be moved to the other side of the window, so the review never ends up covering the form it is describing.
 
 ---
 
@@ -194,7 +198,10 @@ The all-sites permission is opt-in, never requested at install, and revocable fr
 src/
   core/       harvest → label → match → fill.  No DOM writes outside setValue.
   adapters/   per-ATS quirks; the combobox driver lives here
-  ui/         options page, side panel, job tracker, in-page review overlay
+  ui/         options page, side panel, job tracker, in-page review overlay,
+              and the pieces all three pages share — shared.css holds the design
+              tokens; dom/format/stages hold the helpers that would otherwise be
+              copied into each page and drift
   storage/    profile schema, settings, résumés, application log, site access
   background/ service worker: message router, and the content script
               registration that follows your site-access choice
@@ -202,6 +209,8 @@ src/
 ```
 
 TypeScript throughout, no runtime dependencies. Two Vite builds, because MV3 content scripts cannot be ES modules: one produces the service worker and the two pages, the other produces a single self-contained `content.js`.
+
+The pages follow the browser's light/dark setting and honour `prefers-reduced-motion`. There are no web fonts and no remote assets of any kind — the zero-network-requests promise in [PRIVACY.md](PRIVACY.md) covers the stylesheets too.
 
 ### How a fill works
 
@@ -211,7 +220,7 @@ TypeScript throughout, no runtime dependencies. Two Vite builds, because MV3 con
 | **2 · label** | Resolves each field's name through a priority chain, from `aria-labelledby` down to a nearby text node |
 | **3 · match** | Scores the rule table against the label, `autocomplete` token and `name`/`id` — and **refuses when the top two candidates are too close** |
 | **4 · fill** | Writes through the prototype's native setter and rewinds React's value tracker, so framework-controlled inputs actually register the change |
-| **5 · overlay** | Outlines what changed and lists what still needs you |
+| **5 · overlay** | Outlines what changed and lists what still needs you — collapsible, and dockable to either side |
 
 ### How the content script gets there
 
@@ -231,7 +240,7 @@ Declared hostnames live in `public/manifest.json`, and the all-site registration
 
 ### Testing
 
-230 unit and integration tests, plus a browser harness that loads the real extension, seeds a profile, fills a fixture form and drives the tracker end to end. The fixture mirrors the markup patterns real ATS forms use, **including planted decoys** the matcher is expected to refuse.
+240 unit and integration tests, plus a browser harness that loads the real extension, seeds a profile, fills a fixture form and drives the tracker end to end. The fixture mirrors the markup patterns real ATS forms use, **including planted decoys** the matcher is expected to refuse.
 
 The harness exists because jsdom cannot reach two things that have both produced real bugs the unit tests passed straight through: **attaching a file** (there is no `DataTransfer` in jsdom) and **`requestAnimationFrame` timing**.
 
