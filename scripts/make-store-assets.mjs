@@ -264,12 +264,19 @@ const shot1 = () => `
       AutoApply fills the forty fields every job application asks for — from a
       profile that never leaves your computer.
     </div>
+    <!-- Deliberately not a list of the six ATS brand names. The store's keyword
+         spam policy covers screenshots and promotional images as well as the
+         description, and "lists of sites/brands/keywords without substantial
+         added value" is the exact wording it is judged against — a row of brand
+         names in an image is that with no room for the context that would
+         justify it. The supported sites are named once, in prose, in the
+         listing description instead. -->
     <div style="display:inline-flex;align-items:center;gap:9px;margin-top:28px;
                 padding:11px 18px;border-radius:99px;
                 background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);
                 color:#fff;font-size:14px;font-weight:600">
       <span style="width:8px;height:8px;border-radius:99px;background:#4ade80"></span>
-      Greenhouse · Lever · Ashby · Workday
+      Works on the major job boards
     </div>
   </div>
 

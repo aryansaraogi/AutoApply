@@ -10,7 +10,7 @@ Switch to Public later from the same dropdown once you are happy with it.
 
 ## Contents
 
-[Item details](#item-details) · [Graphics](#graphics) · [Single purpose](#single-purpose) ·
+[Item details](#item-details) · [Avoiding keyword spam](#avoiding-keyword-spam) · [Graphics](#graphics) · [Single purpose](#single-purpose) ·
 [Permission justifications](#permission-justifications) · [Data use](#data-use-disclosures) ·
 [Privacy policy hosting](#privacy-policy-hosting) · [Submission checklist](#submission-checklist)
 
@@ -56,23 +56,26 @@ WHAT IT DOES
 • Shows how long each application has sat in its current stage, and flags the
   ones that have not moved in three weeks — so nothing quietly goes cold.
 
-WORKS AUTOMATICALLY ON
+WHERE IT WORKS
 
-Greenhouse, Lever, Ashby, Workable, SmartRecruiters and Workday. On any other
-careers page you can turn it on for that site with one click and it will use its
-generic form handling.
+Most job postings are served by a handful of applicant tracking systems, and
+AutoApply recognises six of them on sight: Greenhouse, Lever, Ashby, Workable,
+SmartRecruiters and Workday. Opening a posting on any of those is enough, with
+nothing to switch on. On a company's own careers page, one click enables it for
+that site, where it falls back to handling any ordinary HTML form.
 
 WHAT IT WILL NOT DO
 
-• Never submits a form.
-• Never fills passwords, social security or national insurance numbers, bank or
-  card details, passport or licence numbers, or dates of birth.
-• Never ticks a checkbox — almost every one is a consent or acknowledgement, and
-  those are yours to agree to.
-• Never answers a question it is not confident about. "Are you legally authorized
-  to work in the US without sponsorship?" combines two answers that can disagree,
-  so it hands that one back to you rather than guessing.
-• Only ever attaches a résumé, and only to a field whose label asks for one.
+• It does not submit. There is no submit control anywhere in the extension.
+• Sensitive fields are refused outright: passwords, social security or national
+  insurance numbers, bank or card details, passport or licence numbers, and
+  dates of birth.
+• Checkboxes are left alone, because almost every one is a consent or an
+  acknowledgement and those are yours to agree to.
+• A question it cannot answer confidently is handed back to you. "Are you
+  legally authorized to work in the US without sponsorship?" folds together two
+  answers that can disagree, so it surfaces that one instead of guessing.
+• Only a résumé is ever attached, and only to a field whose label asks for one.
   Cover letters, transcripts and portfolios are left alone.
 
 YOUR DATA STAYS WITH YOU
@@ -83,6 +86,60 @@ browser on your machine, and removing the extension removes it.
 
 Privacy policy: <PASTE YOUR HOSTED PRIVACY POLICY URL>
 ```
+
+---
+
+## Avoiding keyword spam
+
+**Submission 1 was rejected under this policy** (violation reference *Yellow
+Argon*, routing ID *FZSL*). The description that was submitted contained:
+
+> 🌐 Works with popular job platforms Built-in support for: Greenhouse Lever
+> Ashby Workable SmartRecruiters Workday
+
+That is six brand names in a row under a heading, with no sentence around them.
+The store's rule is specific — it prohibits *"lists of sites/brands/keywords
+without substantial added value"* and *"unnatural repetition of the same keyword
+more than 5 times"*. A bare run of brand names is the textbook case.
+
+Note that the rejected text **was never in this file**. It came from an earlier
+draft pasted into the dashboard by hand. Copy the blocks in this document
+verbatim and the problem does not recur.
+
+### What changed in response
+
+- The supported sites are now named **once, inside a sentence** that explains
+  what an applicant tracking system is and what happens on sites outside the six.
+  The names are the same; the context around them is what makes them descriptive
+  rather than a keyword list.
+- The section heading is `WHERE IT WORKS` rather than a label that reads like a
+  keyword category.
+- `Never` opened five consecutive bullets in `WHAT IT WILL NOT DO`. Each bullet
+  now leads with its own subject. The claims are unchanged.
+- **Screenshot 1 no longer carries a `Greenhouse · Lever · Ashby · Workday`
+  pill.** The policy covers *"screenshots, and promotional images"*, not just the
+  description, and a row of brand names in an image has no room for the context
+  that would justify it. It reads "Works on the major job boards" instead.
+
+### Before you resubmit
+
+Check the copy you are about to paste, not the copy you remember writing:
+
+- [ ] No heading followed by a bare list of brand or site names
+- [ ] Each of the six ATS names appears **once**, inside a sentence
+- [ ] No word repeated more than five times except ordinary grammar words
+- [ ] No emoji used as a section heading
+- [ ] Nothing in the screenshots or promo tiles is a list of brands or keywords
+- [ ] The short description and the detailed description do not repeat each other
+      verbatim
+
+### Appeal, or resubmit?
+
+Resubmit. An appeal is for a decision you believe was wrong, and this one was
+correct — the submitted text did contain a bare brand list. Fixing the metadata
+and submitting a new revision is both faster and the outcome the reviewer asked
+for. Nothing about the extension's code, permissions or behaviour is implicated,
+so the package itself does not need to change.
 
 ---
 
