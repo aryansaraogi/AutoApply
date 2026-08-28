@@ -18,10 +18,23 @@ Switch to Public later from the same dropdown once you are happy with it.
 
 ## Item details
 
-**Name** (45 characters max — this is 34)
+**Name** — *not a dashboard field.*
+
 ```
-AutoApply — job application autofill
+AutoApply — Job Application Autofill
 ```
+
+This is `name` in `public/manifest.json`, currently 36 of the 75 characters
+allowed. It is **not** editable in the Developer Dashboard:
+
+> "This name appears in the Chrome Web Store and the Chrome browser."
+> "After uploading your item, you won't be able to edit the metadata of your
+> manifest in the developer dashboard."
+
+So changing it means editing the manifest, running `npm run package`, and
+uploading the new zip — there is nothing to paste. `action.default_title` stays
+the short "AutoApply", since that is the toolbar tooltip and has no room for a
+subtitle.
 
 > ⚠️ "AutoApply" is a crowded name in the job-search space. Store names need not
 > be unique so this will not block submission, but search for conflicts before
@@ -84,7 +97,7 @@ There is no account, no server, and no analytics. The extension makes no network
 requests at all — there is no code in it that can. Everything is stored in your
 browser on your machine, and removing the extension removes it.
 
-Privacy policy: <PASTE YOUR HOSTED PRIVACY POLICY URL>
+Privacy policy: https://docs.google.com/document/d/1VuqjvcuTQtC1i8NK9U5KWMwsJPoYYfwLl_L3DCAiYgo/preview
 ```
 
 ---
@@ -284,6 +297,25 @@ be hosted as-is. In rough order of least effort:
 
 Whichever you pick, put the same URL in **both** the "Privacy policy URL" field and
 the last line of the detailed description.
+
+### The URL in use
+
+```
+https://docs.google.com/document/d/1VuqjvcuTQtC1i8NK9U5KWMwsJPoYYfwLl_L3DCAiYgo/preview
+```
+
+A Google Doc shared as "Anyone with the link". Verified readable by an
+anonymous request — the full policy text comes back with no sign-in redirect
+and no "Request access" prompt, which is the only thing that matters for a
+reviewer opening it cold.
+
+`/preview` rather than the `/edit?usp=sharing` form: `/edit` opens the editor
+chrome and offers a "Request edit access" button, which is noise on a document
+being cited as a policy. Both resolve for a public doc; `/preview` is the
+read-only view.
+
+`store/privacy-policy.html` in this repo is the same policy as a standalone
+page, kept as a fallback if the Doc is ever moved or its sharing changes.
 
 ---
 

@@ -60,7 +60,7 @@ if (missing.length > 0) {
  * @type {{ field: string, value: unknown, max: number }[]}
  */
 const limits = [
-  { field: 'name', value: manifest.name, max: 45 },
+  { field: 'name', value: manifest.name, max: 75 },
   { field: 'description', value: manifest.description, max: 132 },
   { field: 'version', value: manifest.version, max: 20 },
 ];
