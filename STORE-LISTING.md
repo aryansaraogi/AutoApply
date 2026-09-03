@@ -10,7 +10,7 @@ Switch to Public later from the same dropdown once you are happy with it.
 
 ## Contents
 
-[Item details](#item-details) · [Graphics](#graphics) · [Single purpose](#single-purpose) ·
+[Item details](#item-details) · [Avoiding keyword spam](#avoiding-keyword-spam) · [Graphics](#graphics) · [Single purpose](#single-purpose) ·
 [Permission justifications](#permission-justifications) · [Data use](#data-use-disclosures) ·
 [Privacy policy hosting](#privacy-policy-hosting) · [Submission checklist](#submission-checklist)
 
@@ -18,10 +18,23 @@ Switch to Public later from the same dropdown once you are happy with it.
 
 ## Item details
 
-**Name** (45 characters max — this is 34)
+**Name** — *not a dashboard field.*
+
 ```
-AutoApply — job application autofill
+AutoApply — Job Application Autofill
 ```
+
+This is `name` in `public/manifest.json`, currently 36 of the 75 characters
+allowed. It is **not** editable in the Developer Dashboard:
+
+> "This name appears in the Chrome Web Store and the Chrome browser."
+> "After uploading your item, you won't be able to edit the metadata of your
+> manifest in the developer dashboard."
+
+So changing it means editing the manifest, running `npm run package`, and
+uploading the new zip — there is nothing to paste. `action.default_title` stays
+the short "AutoApply", since that is the toolbar tooltip and has no room for a
+subtitle.
 
 > ⚠️ "AutoApply" is a crowded name in the job-search space. Store names need not
 > be unique so this will not block submission, but search for conflicts before
@@ -51,28 +64,34 @@ WHAT IT DOES
 • Highlights every field it touched, and lists what still needs you and why.
   The review panel collapses out of the way and can be moved to either side of
   the window, so it never covers the form you are checking.
-• Tracks each application through Draft, Applied, Screening, Interview, Offer,
-  Rejected or Withdrawn, with notes and CSV export.
+• Tracks each application through the stages from draft to offer, with notes
+  and CSV export.
 • Shows how long each application has sat in its current stage, and flags the
   ones that have not moved in three weeks — so nothing quietly goes cold.
 
-WORKS AUTOMATICALLY ON
+WHERE IT WORKS
 
-Greenhouse, Lever, Ashby, Workable, SmartRecruiters and Workday. On any other
-careers page you can turn it on for that site with one click and it will use its
-generic form handling.
+Most job postings are served by a handful of applicant tracking systems.
+AutoApply recognises the major ones automatically, so opening a posting on one
+is enough and there is nothing to switch on. Everywhere else — a company's own
+careers page, for instance — one click enables it for that site, where it falls
+back to handling any ordinary HTML form.
+
+The exact sites it covers on its own are listed in the permissions Chrome shows
+you before you install.
 
 WHAT IT WILL NOT DO
 
-• Never submits a form.
-• Never fills passwords, social security or national insurance numbers, bank or
-  card details, passport or licence numbers, or dates of birth.
-• Never ticks a checkbox — almost every one is a consent or acknowledgement, and
-  those are yours to agree to.
-• Never answers a question it is not confident about. "Are you legally authorized
-  to work in the US without sponsorship?" combines two answers that can disagree,
-  so it hands that one back to you rather than guessing.
-• Only ever attaches a résumé, and only to a field whose label asks for one.
+• It does not submit. There is no submit control anywhere in the extension.
+• Sensitive fields are refused outright: passwords, social security or national
+  insurance numbers, bank or card details, passport or licence numbers, and
+  dates of birth.
+• Checkboxes are left alone, because almost every one is a consent or an
+  acknowledgement and those are yours to agree to.
+• A question it cannot answer confidently is handed back to you. "Are you
+  legally authorized to work in the US without sponsorship?" folds together two
+  answers that can disagree, so it surfaces that one instead of guessing.
+• Only a résumé is ever attached, and only to a field whose label asks for one.
   Cover letters, transcripts and portfolios are left alone.
 
 YOUR DATA STAYS WITH YOU
@@ -81,8 +100,80 @@ There is no account, no server, and no analytics. The extension makes no network
 requests at all — there is no code in it that can. Everything is stored in your
 browser on your machine, and removing the extension removes it.
 
-Privacy policy: <PASTE YOUR HOSTED PRIVACY POLICY URL>
+Privacy policy: https://docs.google.com/document/d/1VuqjvcuTQtC1i8NK9U5KWMwsJPoYYfwLl_L3DCAiYgo/preview
 ```
+
+---
+
+## Avoiding keyword spam
+
+This listing was rejected **twice** under the same policy (violation reference
+*Yellow Argon*, routing ID *FZSL*). The second rejection is the instructive one.
+
+### Submission 1
+
+> 🌐 Works with popular job platforms Built-in support for: Greenhouse Lever
+> Ashby Workable SmartRecruiters Workday
+
+Six brand names under a heading, no sentence around them. Textbook.
+
+### Submission 2
+
+> Greenhouse, Lever, Ashby, Workable, SmartRecruiters and Workday
+
+This was the *fixed* version — the same six names rewritten into a grammatical
+sentence that explained what an applicant tracking system is and what happens on
+other sites. It was rejected anyway.
+
+**The lesson: prose around the names does not rescue them.** The rule reads
+*"lists of sites/brands/keywords without substantial added value"*, and it is
+natural to read "substantial added value" as something the surrounding sentence
+can supply. In practice the enumeration itself is what gets flagged. Six brand
+names in a row is a list whatever punctuation joins them.
+
+### The rule to follow
+
+**Do not name the supported sites in the description at all.** Describe the
+category instead, and point at the permissions, which is where Chrome shows the
+user the actual domains before they install — authoritative, and not metadata
+you are writing:
+
+```
+AutoApply recognises the major ones automatically ...
+The exact sites it covers on its own are listed in the permissions Chrome shows
+you before you install.
+```
+
+The permission justification fields are a separate matter. Those *must* name the
+six hosts, because they exist to explain specific host permissions to a reviewer.
+They are not public listing metadata and were never part of either rejection.
+
+### This also applies to the images
+
+The policy covers *"screenshots, and promotional images"*, not just the
+description. Two things were fixed there even though neither was cited:
+
+- Screenshot 1 carried a `Greenhouse · Lever · Ashby · Workday` pill.
+- Screenshot 4 listed six **real employers** down its Company column — a list of
+  brands in a promotional image, the same shape by a different route.
+
+Every employer and address in the mockups is now invented, on the RFC-reserved
+`.example` TLD. See the header of `scripts/make-store-assets.mjs`.
+
+### Checklist before resubmitting
+
+- [ ] The description names **no** ATS or job-board brands
+- [ ] No image contains a list of brands, sites, or keywords
+- [ ] No employer name in a mockup is a real company
+- [ ] No word repeated more than five times except ordinary grammar words
+- [ ] No emoji used as a section heading
+- [ ] No heading followed by a bare list of anything
+
+### Appeal, or resubmit?
+
+Resubmit. Both rejections were correct on their face — the text really did
+contain a brand list each time. An appeal argues the reviewer was wrong, which
+is a slower path and not the one being asked for here.
 
 ---
 
@@ -227,6 +318,25 @@ be hosted as-is. In rough order of least effort:
 
 Whichever you pick, put the same URL in **both** the "Privacy policy URL" field and
 the last line of the detailed description.
+
+### The URL in use
+
+```
+https://docs.google.com/document/d/1VuqjvcuTQtC1i8NK9U5KWMwsJPoYYfwLl_L3DCAiYgo/preview
+```
+
+A Google Doc shared as "Anyone with the link". Verified readable by an
+anonymous request — the full policy text comes back with no sign-in redirect
+and no "Request access" prompt, which is the only thing that matters for a
+reviewer opening it cold.
+
+`/preview` rather than the `/edit?usp=sharing` form: `/edit` opens the editor
+chrome and offers a "Request edit access" button, which is noise on a document
+being cited as a policy. Both resolve for a public doc; `/preview` is the
+read-only view.
+
+`store/privacy-policy.html` in this repo is the same policy as a standalone
+page, kept as a fallback if the Doc is ever moved or its sharing changes.
 
 ---
 

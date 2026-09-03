@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AutoApply",
+  "name": "AutoApply — Job Application Autofill",
   "version": "1.0.0",
   "description": "Fills job applications from a profile stored on your own computer. Shows what it filled. Never submits for you.",
 

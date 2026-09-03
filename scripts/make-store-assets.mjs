@@ -19,6 +19,13 @@
  * Everything renders headless, so unlike `npm run screenshots` this needs no
  * window focus and no permission prompt.
  *
+ * Every employer and web address in these mockups is invented, and the domains
+ * use the RFC-reserved .example TLD. Two submissions were rejected for keyword
+ * spam over lists of real brand names, and the policy covers screenshots and
+ * promotional images as well as the description — a column of real company
+ * names in the tracker shot is that same shape. Invented names demonstrate the
+ * product just as well and cannot be read as a brand list. Keep it that way.
+ *
  * Usage: node scripts/make-store-assets.mjs
  */
 
@@ -264,12 +271,19 @@ const shot1 = () => `
       AutoApply fills the forty fields every job application asks for — from a
       profile that never leaves your computer.
     </div>
+    <!-- Deliberately not a list of the six ATS brand names. The store's keyword
+         spam policy covers screenshots and promotional images as well as the
+         description, and "lists of sites/brands/keywords without substantial
+         added value" is the exact wording it is judged against — a row of brand
+         names in an image is that with no room for the context that would
+         justify it. The supported sites are named once, in prose, in the
+         listing description instead. -->
     <div style="display:inline-flex;align-items:center;gap:9px;margin-top:28px;
                 padding:11px 18px;border-radius:99px;
                 background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);
                 color:#fff;font-size:14px;font-weight:600">
       <span style="width:8px;height:8px;border-radius:99px;background:#4ade80"></span>
-      Greenhouse · Lever · Ashby · Workday
+      Works on the major job boards
     </div>
   </div>
 
@@ -278,7 +292,7 @@ const shot1 = () => `
        that you can read the refusals. -->
   <div class="win" style="position:absolute;left:596px;top:84px;width:672px;height:664px;
        transform:perspective(2200px) rotateY(-12deg) rotateZ(-1.3deg)">
-    ${chrome_('jobs.lever.co/northwind/apply')}
+    ${chrome_('jobs.northwind.example/apply')}
     <div style="padding:24px 28px">
       <div style="font-family:Georgia,serif;font-size:22px;color:#14161d;margin-bottom:3px">
         Senior Platform Engineer
@@ -421,12 +435,12 @@ const shot4 = () => {
             )
             .join('')}
         </tr>
-        ${row('Senior Software Engineer', 'Anthropic', 'Interview', '#d97706', 'Aug 25', '2 days')}
-        ${row('Staff Engineer, Edge', 'Vercel', 'Screening', '#0891b2', 'Aug 22', '5 days')}
-        ${row('Senior Product Engineer', 'Linear', 'Applied', '#2563eb', 'Aug 19', '8 days')}
-        ${row('SWE, Payments', 'Stripe', 'Offer', '#16a34a', 'Aug 6', '3 weeks', true)}
-        ${row('Engineering Manager', 'Notion', 'Draft', '#94a3b8', 'Aug 27', 'today')}
-        ${row('Senior Frontend Engineer', 'Figma', 'Rejected', '#dc2626', 'Jul 28', '—')}
+        ${row('Senior Software Engineer', 'Northwind Labs', 'Interview', '#d97706', 'Aug 25', '2 days')}
+        ${row('Staff Engineer, Edge', 'Kestrel Systems', 'Screening', '#0891b2', 'Aug 22', '5 days')}
+        ${row('Senior Product Engineer', 'Meridian', 'Applied', '#2563eb', 'Aug 19', '8 days')}
+        ${row('SWE, Payments', 'Lumen Works', 'Offer', '#16a34a', 'Aug 6', '3 weeks', true)}
+        ${row('Engineering Manager', 'Harborline', 'Draft', '#94a3b8', 'Aug 27', 'today')}
+        ${row('Senior Frontend Engineer', 'Vantage Bio', 'Rejected', '#dc2626', 'Jul 28', '—')}
       </table>
     </div>
   </div>
@@ -546,7 +560,7 @@ const promoMarquee = () => `
 
   <div class="win" style="position:absolute;left:806px;top:66px;width:556px;height:470px;
        transform:perspective(1900px) rotateY(-13deg) rotateZ(-1.4deg)">
-    ${chrome_('jobs.lever.co/northwind/apply')}
+    ${chrome_('jobs.northwind.example/apply')}
     <div style="padding:20px 24px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
         ${field('First name', 'Ada', 'filled')}
