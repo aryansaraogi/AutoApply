@@ -64,18 +64,21 @@ WHAT IT DOES
 • Highlights every field it touched, and lists what still needs you and why.
   The review panel collapses out of the way and can be moved to either side of
   the window, so it never covers the form you are checking.
-• Tracks each application through Draft, Applied, Screening, Interview, Offer,
-  Rejected or Withdrawn, with notes and CSV export.
+• Tracks each application through the stages from draft to offer, with notes
+  and CSV export.
 • Shows how long each application has sat in its current stage, and flags the
   ones that have not moved in three weeks — so nothing quietly goes cold.
 
 WHERE IT WORKS
 
-Most job postings are served by a handful of applicant tracking systems, and
-AutoApply recognises six of them on sight: Greenhouse, Lever, Ashby, Workable,
-SmartRecruiters and Workday. Opening a posting on any of those is enough, with
-nothing to switch on. On a company's own careers page, one click enables it for
-that site, where it falls back to handling any ordinary HTML form.
+Most job postings are served by a handful of applicant tracking systems.
+AutoApply recognises the major ones automatically, so opening a posting on one
+is enough and there is nothing to switch on. Everywhere else — a company's own
+careers page, for instance — one click enables it for that site, where it falls
+back to handling any ordinary HTML form.
+
+The exact sites it covers on its own are listed in the permissions Chrome shows
+you before you install.
 
 WHAT IT WILL NOT DO
 
@@ -104,55 +107,73 @@ Privacy policy: https://docs.google.com/document/d/1VuqjvcuTQtC1i8NK9U5KWMwsJPoY
 
 ## Avoiding keyword spam
 
-**Submission 1 was rejected under this policy** (violation reference *Yellow
-Argon*, routing ID *FZSL*). The description that was submitted contained:
+This listing was rejected **twice** under the same policy (violation reference
+*Yellow Argon*, routing ID *FZSL*). The second rejection is the instructive one.
+
+### Submission 1
 
 > 🌐 Works with popular job platforms Built-in support for: Greenhouse Lever
 > Ashby Workable SmartRecruiters Workday
 
-That is six brand names in a row under a heading, with no sentence around them.
-The store's rule is specific — it prohibits *"lists of sites/brands/keywords
-without substantial added value"* and *"unnatural repetition of the same keyword
-more than 5 times"*. A bare run of brand names is the textbook case.
+Six brand names under a heading, no sentence around them. Textbook.
 
-Note that the rejected text **was never in this file**. It came from an earlier
-draft pasted into the dashboard by hand. Copy the blocks in this document
-verbatim and the problem does not recur.
+### Submission 2
 
-### What changed in response
+> Greenhouse, Lever, Ashby, Workable, SmartRecruiters and Workday
 
-- The supported sites are now named **once, inside a sentence** that explains
-  what an applicant tracking system is and what happens on sites outside the six.
-  The names are the same; the context around them is what makes them descriptive
-  rather than a keyword list.
-- The section heading is `WHERE IT WORKS` rather than a label that reads like a
-  keyword category.
-- `Never` opened five consecutive bullets in `WHAT IT WILL NOT DO`. Each bullet
-  now leads with its own subject. The claims are unchanged.
-- **Screenshot 1 no longer carries a `Greenhouse · Lever · Ashby · Workday`
-  pill.** The policy covers *"screenshots, and promotional images"*, not just the
-  description, and a row of brand names in an image has no room for the context
-  that would justify it. It reads "Works on the major job boards" instead.
+This was the *fixed* version — the same six names rewritten into a grammatical
+sentence that explained what an applicant tracking system is and what happens on
+other sites. It was rejected anyway.
 
-### Before you resubmit
+**The lesson: prose around the names does not rescue them.** The rule reads
+*"lists of sites/brands/keywords without substantial added value"*, and it is
+natural to read "substantial added value" as something the surrounding sentence
+can supply. In practice the enumeration itself is what gets flagged. Six brand
+names in a row is a list whatever punctuation joins them.
 
-Check the copy you are about to paste, not the copy you remember writing:
+### The rule to follow
 
-- [ ] No heading followed by a bare list of brand or site names
-- [ ] Each of the six ATS names appears **once**, inside a sentence
+**Do not name the supported sites in the description at all.** Describe the
+category instead, and point at the permissions, which is where Chrome shows the
+user the actual domains before they install — authoritative, and not metadata
+you are writing:
+
+```
+AutoApply recognises the major ones automatically ...
+The exact sites it covers on its own are listed in the permissions Chrome shows
+you before you install.
+```
+
+The permission justification fields are a separate matter. Those *must* name the
+six hosts, because they exist to explain specific host permissions to a reviewer.
+They are not public listing metadata and were never part of either rejection.
+
+### This also applies to the images
+
+The policy covers *"screenshots, and promotional images"*, not just the
+description. Two things were fixed there even though neither was cited:
+
+- Screenshot 1 carried a `Greenhouse · Lever · Ashby · Workday` pill.
+- Screenshot 4 listed six **real employers** down its Company column — a list of
+  brands in a promotional image, the same shape by a different route.
+
+Every employer and address in the mockups is now invented, on the RFC-reserved
+`.example` TLD. See the header of `scripts/make-store-assets.mjs`.
+
+### Checklist before resubmitting
+
+- [ ] The description names **no** ATS or job-board brands
+- [ ] No image contains a list of brands, sites, or keywords
+- [ ] No employer name in a mockup is a real company
 - [ ] No word repeated more than five times except ordinary grammar words
 - [ ] No emoji used as a section heading
-- [ ] Nothing in the screenshots or promo tiles is a list of brands or keywords
-- [ ] The short description and the detailed description do not repeat each other
-      verbatim
+- [ ] No heading followed by a bare list of anything
 
 ### Appeal, or resubmit?
 
-Resubmit. An appeal is for a decision you believe was wrong, and this one was
-correct — the submitted text did contain a bare brand list. Fixing the metadata
-and submitting a new revision is both faster and the outcome the reviewer asked
-for. Nothing about the extension's code, permissions or behaviour is implicated,
-so the package itself does not need to change.
+Resubmit. Both rejections were correct on their face — the text really did
+contain a brand list each time. An appeal argues the reviewer was wrong, which
+is a slower path and not the one being asked for here.
 
 ---
 
